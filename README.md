@@ -1,46 +1,55 @@
-# java-client-server-system
-# Java Client-Server Role-Based System
+# Shkolo
 
-## Description
+Училищна система: Spring Boot REST backend + PostgreSQL + React frontend. Роли Admin /
+Teacher / Student — admin създава потребители, учител вписва оценки, ученик вижда своите.
 
-This project is a client-server application developed in Java using sockets and multithreading. It simulates a role-based system with different user types (Admin, Student, Teacher), each having specific functionalities.
+Оригиналната TCP socket версия на проекта е запазена в [legacy/](legacy/) само като
+референция и вече не се поддържа.
 
-##  Features
+## Технологии
 
-* Client-server architecture using Java sockets
-* Multi-client handling using threads (ClientHandler)
-* Role-based system (Admin / Student / Teacher)
-* User authentication (login system)
-* Grade management system
-* Input validation using regular expressions
-* Data persistence using file serialization
+* Backend: Java 21, Spring Boot, Spring Security (JWT), Spring Data JPA, Flyway, Maven
+* Frontend: React, TypeScript, Vite, React Router
+* База данни: PostgreSQL
 
-##  Technologies Used
+## Стартиране локално
 
-* Java
-* Sockets (TCP)
-* Multithreading
-* OOP principles (Inheritance, Polymorphism, Enums)
-* File I/O (Serialization)
+### 1. PostgreSQL
 
-##  How it works
+Създай база данни (по подразбиране очаква `shkolo`):
 
-* Server accepts multiple client connections
-* Each client is handled in a separate thread
-* Users log in with credentials
-* Each role has different permissions and actions
+```
+createdb shkolo
+```
 
-##  Roles
+### 2. Backend
 
-* **Admin** → creates users
-* **Teacher** → assigns grades
-* **Student** → views grades
+```
+cd backend
+DB_USERNAME=postgres DB_PASSWORD=<твоята парола> ./mvnw spring-boot:run
+```
 
-##  Project Structure
+При първо стартиране Flyway създава схемата и се seed-ва администраторски акаунт
+(`admin` / `admin12345` по подразбиране — виж `app.seed-admin.*` в
+`src/main/resources/application.yml`, конфигурируемо през env vars `SEED_ADMIN_USERNAME` /
+`SEED_ADMIN_PASSWORD`). Смени паролата на админа след първи вход.
 
-* Server
-* ClientHandler
-* Client
-* SystemManager
-* User classes (Admin, Student, Teacher)
-* Grade system
+Конфигурируеми env vars: `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `SERVER_PORT`,
+`JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `FRONTEND_ORIGIN`.
+
+### 3. Frontend
+
+```
+cd frontend
+npm install
+npm run dev
+```
+
+По подразбиране очаква backend на `http://localhost:8080` (виж `frontend/.env`).
+
+## Роли
+
+* **Admin** → създава teacher/student акаунти (username за teacher: `@tu-sofia.bg` имейл;
+  за student: 9-цифрен факултетен номер, парола = 10-цифрено ЕГН)
+* **Teacher** → вписва оценки на ученици по факултетен номер
+* **Student** → вижда собствените си оценки
