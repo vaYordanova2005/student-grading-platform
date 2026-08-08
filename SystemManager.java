@@ -5,16 +5,15 @@ import java.util.regex.Pattern;
 
 public class SystemManager {
     List<User1> users = new ArrayList<>();
-    Scanner sc = new Scanner(System.in);
 
-    public void addUser(PrintStream ps){
+    public void addUser(BufferedReader br, PrintStream ps) throws IOException{
         ps.println("What profile do you want to create: student / teacher? ");
-        String profile = sc.nextLine();
+        String profile = br.readLine();
 
         if(profile.equalsIgnoreCase("teacher")){
             ps.println("Enter email and password: ");
-            String email = sc.nextLine();
-            String password = sc.nextLine();
+            String email = br.readLine();
+            String password = br.readLine();
 
             Pattern pattern = Pattern.compile("^[a-z]+@tu-sofia\\.bg$");
             Matcher matcher = pattern.matcher(email);
@@ -23,8 +22,8 @@ public class SystemManager {
             checkTeacher(match, password, email, ps);
         }else if(profile.equalsIgnoreCase("student")){
             ps.println("Enter username and EGN: ");
-            String username = sc.nextLine();
-            String egn = sc.nextLine();
+            String username = br.readLine();
+            String egn = br.readLine();
 
             Pattern userPattern = Pattern.compile("^\\d{9}$");
             Matcher userMatcher = userPattern.matcher(username);
@@ -80,12 +79,12 @@ public class SystemManager {
         return null;
     }
 
-    public void addGrade(Teacher1 teacher, PrintStream ps){
+    public void addGrade(Teacher1 teacher, BufferedReader br, PrintStream ps) throws IOException{
         ps.println("Enter student FN, subject, semester and grade: ");
-        String fn = sc.nextLine();
-        String subject = sc.nextLine();
-        int semester = Integer.parseInt(sc.nextLine());
-        int gr = Integer.parseInt(sc.nextLine());
+        String fn = br.readLine();
+        String subject = br.readLine();
+        int semester = Integer.parseInt(br.readLine());
+        int gr = Integer.parseInt(br.readLine());
         boolean found = false;
 
         for(User1 student : users){

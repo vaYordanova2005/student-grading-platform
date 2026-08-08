@@ -35,11 +35,11 @@ public class ClientHandler implements Runnable{
 
                 UserType type = user.getUserType();
                 if(type == UserType.ADMIN){
-                    systemManager.addUser(ps);
+                    systemManager.addUser(br, ps);
                 }else if(type == UserType.STUDENT){
                     systemManager.showGrades((Student1) user, ps);
                 }else if(type == UserType.TEACHER){
-                    systemManager.addGrade((Teacher1) user, ps);
+                    systemManager.addGrade((Teacher1) user, br, ps);
                 }
 
             } catch (IOException e) {
