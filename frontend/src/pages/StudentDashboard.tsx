@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import apiClient, { extractErrorMessage } from '../api/client';
 import { Layout } from '../routes/Layout';
 import type { GradeSummary } from '../types';
@@ -76,20 +77,24 @@ export function StudentDashboard() {
       {!loading && stats && (
         <>
           <div className="stat-strip">
-            <div className="stat-tile" style={{ '--tile-accent': tierColor(stats.overallAvg) } as CSSProperties}>
+            <Link
+              to="/journal"
+              className="stat-tile"
+              style={{ '--tile-accent': tierColor(stats.overallAvg) } as CSSProperties}
+            >
               <ChartIcon />
               <div>
                 <strong>{stats.overallAvg.toFixed(2)}</strong>
                 <span>Успех</span>
               </div>
-            </div>
-            <div className="stat-tile">
+            </Link>
+            <Link to="/journal" className="stat-tile">
               <JournalIcon />
               <div>
                 <strong>{grades.length}</strong>
                 <span>Оценки</span>
               </div>
-            </div>
+            </Link>
             <div className="stat-tile" style={{ '--tile-accent': 'var(--success)' } as CSSProperties}>
               <TrophyIcon />
               <div>
@@ -141,28 +146,6 @@ export function StudentDashboard() {
               </div>
             </section>
           )}
-
-          <section className="card">
-            <h2>Всички оценки</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Семестър</th>
-                  <th>Предмет</th>
-                  <th>Оценка</th>
-                </tr>
-              </thead>
-              <tbody>
-                {grades.map((g) => (
-                  <tr key={g.id}>
-                    <td>{g.semester}</td>
-                    <td>{g.subject}</td>
-                    <td>{g.grade}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
         </>
       )}
     </Layout>

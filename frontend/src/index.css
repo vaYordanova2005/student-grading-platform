@@ -60,6 +60,7 @@ body {
   font-weight: 700;
   color: var(--primary);
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .topbar-user {
@@ -206,6 +207,17 @@ td {
   border-left: 4px solid var(--tile-accent, var(--primary));
   border-radius: 8px;
   padding: 1rem;
+}
+
+a.stat-tile {
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+a.stat-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .stat-tile svg {
