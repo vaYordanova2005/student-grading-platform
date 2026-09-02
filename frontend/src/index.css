@@ -190,3 +190,113 @@ td {
 .success {
   color: var(--success);
 }
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.stat-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--tile-accent, var(--primary));
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.stat-tile svg {
+  flex-shrink: 0;
+  color: var(--tile-accent, var(--primary));
+}
+
+.stat-tile div {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-tile strong {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.stat-tile span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.subject-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.subject-bar-row {
+  display: grid;
+  grid-template-columns: 9rem 1fr 5rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.subject-bar-label {
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-track {
+  background: var(--bg);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.subject-bar-value {
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.subject-bar-value small {
+  font-weight: 400;
+  opacity: 0.65;
+}
+
+.semester-trend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.semester-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  min-width: 5rem;
+}
+
+.semester-pill-label {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.semester-pill-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}

@@ -61,3 +61,23 @@ export function ProfileIcon(props: SVGProps<SVGSVGElement>) {
     </Icon>
   );
 }
+
+export function TrophyIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 5H4v1.5A3.5 3.5 0 0 0 7 10M17 5h3v1.5A3.5 3.5 0 0 1 17 10" />
+      <path d="M12 14v3M9 21h6M10 17.5h4v2.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2.5Z" />
+    </Icon>
+  );
+}
+
+export function BooksIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="4" width="6" height="16" rx="1" />
+      <rect x="10.5" y="6" width="6" height="14" rx="1" />
+      <path d="M18.5 8.5 20.5 19a1 1 0 0 1-.8 1.17L17.5 20.5" />
+    </Icon>
+  );
+}
