@@ -121,7 +121,7 @@ export function StudentDashboard() {
             </div>
           </div>
 
-          <section className="card subject-card">
+          <section className="card">
             <h2>Успех по предмети</h2>
             <div className="subject-bars">
               {stats.subjectAverages.map(({ subject, avg, count }) => (

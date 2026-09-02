@@ -124,6 +124,10 @@ main {
   text-align: center;
 }
 
+.card h2 {
+  margin-top: 0;
+}
+
 form label {
   display: flex;
   flex-direction: column;
@@ -281,26 +285,6 @@ a.stat-tile:hover {
   border-radius: 999px;
   height: 10px;
   overflow: hidden;
-}
-
-.subject-card {
-  background: linear-gradient(160deg, #bfe3f5 0%, #eaf7fb 50%, #cdf7ec 100%);
-  color: #16241c;
-}
-
-.subject-card .bar-track {
-  background: rgba(255, 255, 255, 0.55);
-}
-
-@media (prefers-color-scheme: dark) {
-  .subject-card {
-    background: linear-gradient(160deg, #1c2c3a 0%, #1b2b28 50%, #17251f 100%);
-    color: #e7f2ec;
-  }
-
-  .subject-card .bar-track {
-    background: rgba(0, 0, 0, 0.28);
-  }
 }
 
 .bar-fill {
