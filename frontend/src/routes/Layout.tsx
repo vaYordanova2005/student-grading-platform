@@ -23,15 +23,7 @@ export function Layout({ title, children }: { title: string; children: ReactNode
   return (
     <div className="page">
       <header className="topbar">
-        <div className="topbar-top">
-          <span className="brand">Markly</span>
-          <div className="topbar-user">
-            <span>
-              {user?.username} ({user?.role})
-            </span>
-            <button onClick={handleLogout}>Изход</button>
-          </div>
-        </div>
+        <span className="brand">Markly</span>
         <nav className="topnav">
           {navItems.map(({ to, label, icon: ItemIcon, end }) => (
             <NavLink
@@ -45,6 +37,12 @@ export function Layout({ title, children }: { title: string; children: ReactNode
             </NavLink>
           ))}
         </nav>
+        <div className="topbar-user">
+          <span>
+            {user?.username} ({user?.role})
+          </span>
+          <button onClick={handleLogout}>Изход</button>
+        </div>
       </header>
       <main>
         <h2 className="page-title">{title}</h2>

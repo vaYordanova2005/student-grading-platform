@@ -47,36 +47,33 @@ body {
 }
 
 .topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
   background: var(--card-bg);
   border-bottom: 1px solid var(--border);
-}
-
-.topbar-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
 }
 
 .brand {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--primary);
+  white-space: nowrap;
 }
 
 .topbar-user {
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .topnav {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
-  padding: 0 1rem 0.75rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.75rem;
 }
 
 .topnav a {
