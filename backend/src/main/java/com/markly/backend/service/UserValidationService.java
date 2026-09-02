@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 @Service
 public class UserValidationService {
 
-    private static final Pattern TEACHER_EMAIL = Pattern.compile("^[a-z]+@tu-sofia\\.bg$");
+    private static final Pattern TEACHER_EMAIL = Pattern.compile("^[a-z]+@uni-sofia\\.bg$");
     private static final Pattern STUDENT_FACULTY_NUMBER = Pattern.compile("^\\d{9}$");
     private static final Pattern STUDENT_EGN = Pattern.compile("^\\d{10}$");
 
@@ -22,7 +22,7 @@ public class UserValidationService {
 
     private void validateTeacher(String username, String password) {
         if (!TEACHER_EMAIL.matcher(username).matches()) {
-            throw new IllegalArgumentException("Teacher username must be an @tu-sofia.bg email address");
+            throw new IllegalArgumentException("Teacher username must be an @uni-sofia.bg email address");
         }
         if (password.length() < 5) {
             throw new IllegalArgumentException("Teacher password must be at least 5 characters");

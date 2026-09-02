@@ -52,7 +52,7 @@ export function AdminDashboard() {
             </select>
           </label>
           <label>
-            {role === 'TEACHER' ? 'Имейл (@tu-sofia.bg)' : 'Факултетен номер (9 цифри)'}
+            {role === 'TEACHER' ? 'Имейл (@uni-sofia.bg)' : 'Факултетен номер (9 цифри)'}
             <input value={username} onChange={(e) => setUsername(e.target.value)} required />
           </label>
           <label>

@@ -56,7 +56,7 @@ npm run dev
 
 ## Роли
 
-* **Admin** → създава teacher/student акаунти (username за teacher: `@tu-sofia.bg` имейл;
+* **Admin** → създава teacher/student акаунти (username за teacher: `@uni-sofia.bg` имейл;
   за student: 9-цифрен факултетен номер, парола = 10-цифрено ЕГН)
 * **Teacher** → вписва оценки на ученици по факултетен номер
 * **Student** → вижда собствените си оценки
