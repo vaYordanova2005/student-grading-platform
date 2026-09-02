@@ -1,4 +1,4 @@
-# Shkolo
+# Markly
 
 Училищна система: Spring Boot REST backend + PostgreSQL + React frontend. Роли Admin /
 Teacher / Student — admin създава потребители, учител вписва оценки, ученик вижда своите.
@@ -16,10 +16,10 @@ Teacher / Student — admin създава потребители, учител 
 
 ### 1. PostgreSQL
 
-Създай база данни (по подразбиране очаква `shkolo`):
+Създай база данни (по подразбиране очаква `markly`):
 
 ```
-createdb shkolo
+createdb markly
 ```
 
 ### 2. Backend

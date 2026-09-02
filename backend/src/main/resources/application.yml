@@ -2,7 +2,7 @@ spring:
   application:
     name: backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/${DB_NAME:shkolo}
+    url: jdbc:postgresql://localhost:5432/${DB_NAME:markly}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
   jpa:

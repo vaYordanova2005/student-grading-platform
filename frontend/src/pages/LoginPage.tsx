@@ -28,7 +28,7 @@ export function LoginPage() {
   return (
     <div className="centered-page">
       <form className="card" onSubmit={handleSubmit}>
-        <h1>Shkolo</h1>
+        <h1>Markly</h1>
         <label>
           Потребителско име
           <input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
