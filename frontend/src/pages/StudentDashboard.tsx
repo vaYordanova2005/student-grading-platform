@@ -4,6 +4,7 @@ import apiClient, { extractErrorMessage } from '../api/client';
 import { Layout } from '../routes/Layout';
 import type { GradeSummary } from '../types';
 import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
+import { NetworkField } from '../components/NetworkField';
 
 const EXCELLENT_THRESHOLD = 5.5;
 const GOOD_THRESHOLD = 4.5;
@@ -57,7 +58,16 @@ export function StudentDashboard() {
   }, [grades]);
 
   return (
-    <Layout title="Начало">
+    <Layout>
+      <NetworkField
+        className="home-network-bg"
+        intensity={1.9}
+        minNodes={90}
+        maxNodes={220}
+        areaPerNode={3200}
+        linkDist={85}
+        maxPulses={40}
+      />
       {loading && (
         <section className="card">
           <p>Зареждане...</p>
@@ -111,7 +121,7 @@ export function StudentDashboard() {
             </div>
           </div>
 
-          <section className="card">
+          <section className="card subject-card">
             <h2>Успех по предмети</h2>
             <div className="subject-bars">
               {stats.subjectAverages.map(({ subject, avg, count }) => (

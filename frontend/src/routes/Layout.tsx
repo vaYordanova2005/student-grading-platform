@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { HomeIcon, JournalIcon, ChartIcon, CalendarIcon, ProfileIcon } from '../components/icons';
 
-export function Layout({ title, children }: { title: string; children: ReactNode }) {
+export function Layout({ title, children }: { title?: string; children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -46,7 +46,7 @@ export function Layout({ title, children }: { title: string; children: ReactNode
         </div>
       </header>
       <main>
-        <h2 className="page-title">{title}</h2>
+        {title && <h2 className="page-title">{title}</h2>}
         {children}
       </main>
     </div>
