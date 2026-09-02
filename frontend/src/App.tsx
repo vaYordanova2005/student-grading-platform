@@ -5,6 +5,8 @@ import { LoginPage } from './pages/LoginPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { TeacherDashboard } from './pages/TeacherDashboard';
 import { StudentDashboard } from './pages/StudentDashboard';
+import { ProfilePage } from './pages/ProfilePage';
+import { ComingSoonPage } from './pages/ComingSoonPage';
 
 function HomeRedirect() {
   const { user } = useAuth();
@@ -37,6 +39,38 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRole="STUDENT">
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/journal"
+        element={
+          <ProtectedRoute>
+            <ComingSoonPage title="Дневник" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/statistics"
+        element={
+          <ProtectedRoute>
+            <ComingSoonPage title="Статистики" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calendar"
+        element={
+          <ProtectedRoute>
+            <ComingSoonPage title="Календар" />
           </ProtectedRoute>
         }
       />

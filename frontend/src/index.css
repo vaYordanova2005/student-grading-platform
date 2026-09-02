@@ -1,21 +1,26 @@
 :root {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color-scheme: light dark;
-  --bg: #f5f6f8;
+  --bg: #eef7f0;
   --card-bg: #ffffff;
-  --text: #1c1e21;
-  --border: #d9dce1;
-  --primary: #2f6fed;
+  --text: #16241c;
+  --border: #cfe9da;
+  --primary: #3e8a6e;
+  --primary-hover: #336f59;
+  --primary-contrast: #ffffff;
   --error: #d64545;
   --success: #2f9e56;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #14161a;
-    --card-bg: #1e2128;
-    --text: #e7e9ec;
-    --border: #33373f;
+    --bg: #101915;
+    --card-bg: #182620;
+    --text: #e7f2ec;
+    --border: #2b3d34;
+    --primary: #6fc7a4;
+    --primary-hover: #8ed2b5;
+    --primary-contrast: #0e1f17;
   }
 }
 
@@ -42,18 +47,61 @@ body {
 }
 
 .topbar {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
 }
 
 .topbar-user {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.topnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0 1rem 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.topnav a {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.topnav a:hover {
+  background: var(--bg);
+}
+
+.topnav a.active {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+
+.page-title {
+  margin: 0;
 }
 
 main {
@@ -111,10 +159,14 @@ button {
   border: none;
   border-radius: 4px;
   background: var(--primary);
-  color: white;
+  color: var(--primary-contrast);
   cursor: pointer;
   font-weight: 600;
   height: fit-content;
+}
+
+button:not(:disabled):hover {
+  background: var(--primary-hover);
 }
 
 button:disabled {

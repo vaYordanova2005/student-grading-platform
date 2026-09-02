@@ -7,13 +7,15 @@ export function ProtectedRoute({
   allowedRole,
   children,
 }: {
-  allowedRole: Role;
+  allowedRole?: Role;
   children: ReactNode;
 }) {
   const { user } = useAuth();
 
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== allowedRole) return <Navigate to={`/${user.role.toLowerCase()}`} replace />;
+  if (allowedRole && user.role !== allowedRole) {
+    return <Navigate to={`/${user.role.toLowerCase()}`} replace />;
+  }
 
   return <>{children}</>;
 }
