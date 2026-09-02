@@ -17,21 +17,23 @@ public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final String seedAdminUsername;
+    private final String seedAdminPassword;
 
-    @Value("${app.seed-admin.username}")
-    private String seedAdminUsername;
-
-    @Value("${app.seed-admin.password}")
-    private String seedAdminPassword;
-
-    public DataSeeder(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public DataSeeder(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            @Value("${app.seed-admin.username}") String seedAdminUsername,
+            @Value("${app.seed-admin.password}") String seedAdminPassword) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.seedAdminUsername = seedAdminUsername;
+        this.seedAdminPassword = seedAdminPassword;
     }
 
     @Override
     public void run(String... args) {
-        if (userRepository.count() > 0) {
+        if (userRepository.existsByUsernameIgnoreCase(seedAdminUsername)) {
             return;
         }
         User admin = new User(seedAdminUsername, passwordEncoder.encode(seedAdminPassword), Role.ADMIN);

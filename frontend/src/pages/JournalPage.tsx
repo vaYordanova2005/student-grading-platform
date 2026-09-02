@@ -1,26 +1,16 @@
-import { useEffect, useState } from 'react';
-import apiClient, { extractErrorMessage } from '../api/client';
+import { useMemo } from 'react';
 import { Layout } from '../routes/Layout';
 import { useAuth } from '../auth/AuthContext';
-import type { GradeSummary } from '../types';
+import { useStudentGrades } from '../hooks/useStudentGrades';
 
 export function JournalPage() {
   const { user } = useAuth();
-  const [grades, setGrades] = useState<GradeSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { grades, error, loading } = useStudentGrades(user?.role === 'STUDENT');
 
-  useEffect(() => {
-    if (user?.role !== 'STUDENT') {
-      setLoading(false);
-      return;
-    }
-    apiClient
-      .get<GradeSummary[]>('/student/grades')
-      .then((response) => setGrades(response.data))
-      .catch((err) => setError(extractErrorMessage(err)))
-      .finally(() => setLoading(false));
-  }, [user?.role]);
+  const chronological = useMemo(
+    () => [...grades].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [grades]
+  );
 
   if (user?.role !== 'STUDENT') {
     return (
@@ -55,14 +45,16 @@ export function JournalPage() {
           <table>
             <thead>
               <tr>
+                <th>Дата</th>
                 <th>Семестър</th>
                 <th>Предмет</th>
                 <th>Оценка</th>
               </tr>
             </thead>
             <tbody>
-              {grades.map((g) => (
+              {chronological.map((g) => (
                 <tr key={g.id}>
+                  <td>{new Date(g.createdAt).toLocaleDateString('bg-BG')}</td>
                   <td>{g.semester}</td>
                   <td>{g.subject}</td>
                   <td>{g.grade}</td>

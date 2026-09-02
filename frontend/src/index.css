@@ -21,6 +21,8 @@
     --primary: #6fc7a4;
     --primary-hover: #8ed2b5;
     --primary-contrast: #0e1f17;
+    --error: #f0837e;
+    --success: #6fd897;
   }
 }
 

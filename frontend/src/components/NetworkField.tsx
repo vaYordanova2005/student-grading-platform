@@ -129,6 +129,46 @@ export function NetworkField({
       return Math.min(1, Math.sqrt(dx * dx + dy * dy) / centerFadeRadius);
     };
 
+    // Nodes only ever link within `linkDist`, so bucketing them into a grid
+    // sized to that distance turns the naive O(n^2) pair scan into ~O(n):
+    // for each node we only visit its own cell and the 8 neighbors.
+    const cellSize = Math.max(1, linkDist);
+    const cellKey = (cx: number, cy: number) => `${cx},${cy}`;
+
+    const buildGrid = () => {
+      const grid = new Map<string, number[]>();
+      for (let i = 0; i < nodes.length; i += 1) {
+        const n = nodes[i];
+        const key = cellKey(Math.floor(n.x / cellSize), Math.floor(n.y / cellSize));
+        const bucket = grid.get(key);
+        if (bucket) bucket.push(i);
+        else grid.set(key, [i]);
+      }
+      return grid;
+    };
+
+    const forEachLinkPair = (grid: Map<string, number[]>, visit: (a: Node, b: Node, d2: number) => void) => {
+      for (let i = 0; i < nodes.length; i += 1) {
+        const a = nodes[i];
+        const cx = Math.floor(a.x / cellSize);
+        const cy = Math.floor(a.y / cellSize);
+        for (let ox = -1; ox <= 1; ox += 1) {
+          for (let oy = -1; oy <= 1; oy += 1) {
+            const bucket = grid.get(cellKey(cx + ox, cy + oy));
+            if (!bucket) continue;
+            for (const j of bucket) {
+              if (j <= i) continue;
+              const b = nodes[j];
+              const dx = a.x - b.x;
+              const dy = a.y - b.y;
+              const d2 = dx * dx + dy * dy;
+              if (d2 < linkDistSq) visit(a, b, d2);
+            }
+          }
+        }
+      }
+    };
+
     const buildNodes = () => {
       const target = Math.min(maxNodes, Math.max(minNodes, Math.round((width * height) / areaPerNode)));
       nodes = [];
@@ -197,24 +237,15 @@ export function NetworkField({
     const drawStatic = () => {
       ctx.clearRect(0, 0, width, height);
       ctx.lineWidth = 1 + (intensity - 1) * 0.3;
-      for (let i = 0; i < nodes.length; i += 1) {
-        const a = nodes[i];
-        for (let j = i + 1; j < nodes.length; j += 1) {
-          const b = nodes[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < linkDistSq) {
-            const d = Math.sqrt(d2);
-            const fade = centerFadeFor((a.x + b.x) / 2, (a.y + b.y) / 2);
-            ctx.strokeStyle = rgbaI(COLORS.greenDeep, (1 - d / linkDist) * 0.14 * fade);
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
-          }
-        }
-      }
+      forEachLinkPair(buildGrid(), (a, b, d2) => {
+        const d = Math.sqrt(d2);
+        const fade = centerFadeFor((a.x + b.x) / 2, (a.y + b.y) / 2);
+        ctx.strokeStyle = rgbaI(COLORS.greenDeep, (1 - d / linkDist) * 0.14 * fade);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      });
       for (let i = 0; i < nodes.length; i += 1) {
         const n = nodes[i];
         ctx.fillStyle = rgbaI(n.color, (0.3 * n.depth + 0.12) * centerFadeFor(n.x, n.y));
@@ -287,32 +318,23 @@ export function NetworkField({
       }
 
       ctx.lineWidth = 1 + (intensity - 1) * 0.3;
-      for (let i = 0; i < nodes.length; i += 1) {
-        const a = nodes[i];
-        for (let j = i + 1; j < nodes.length; j += 1) {
-          const b = nodes[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < linkDistSq) {
-            const d = Math.sqrt(d2);
-            let alpha = (1 - d / linkDist) * 0.16;
-            if (pointer.active) {
-              const mx = (a.x + b.x) * 0.5 - pointer.x;
-              const my = (a.y + b.y) * 0.5 - pointer.y;
-              if (mx * mx + my * my < POINTER_R_SQ) {
-                alpha += 0.14 * (1 - d / linkDist);
-              }
-            }
-            alpha *= centerFadeFor((a.x + b.x) / 2, (a.y + b.y) / 2);
-            ctx.strokeStyle = rgbaI(COLORS.greenDeep, alpha);
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
+      forEachLinkPair(buildGrid(), (a, b, d2) => {
+        const d = Math.sqrt(d2);
+        let alpha = (1 - d / linkDist) * 0.16;
+        if (pointer.active) {
+          const mx = (a.x + b.x) * 0.5 - pointer.x;
+          const my = (a.y + b.y) * 0.5 - pointer.y;
+          if (mx * mx + my * my < POINTER_R_SQ) {
+            alpha += 0.14 * (1 - d / linkDist);
           }
         }
-      }
+        alpha *= centerFadeFor((a.x + b.x) / 2, (a.y + b.y) / 2);
+        ctx.strokeStyle = rgbaI(COLORS.greenDeep, alpha);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      });
 
       for (let i = 0; i < nodes.length; i += 1) {
         const n = nodes[i];

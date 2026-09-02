@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import apiClient, { extractErrorMessage } from '../api/client';
 import { Layout } from '../routes/Layout';
-import type { GradeSummary } from '../types';
 import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
 import { NetworkField } from '../components/NetworkField';
+import { useStudentGrades } from '../hooks/useStudentGrades';
 
-const EXCELLENT_THRESHOLD = 5.5;
+// Thresholds for the 2-6 Bulgarian grading scale.
+const EXCELLENT_THRESHOLD = 5.5; // average tier color cutoff
 const GOOD_THRESHOLD = 4.5;
+const TOP_GRADE = 6; // individual grade counted as "excellent"
 
 function tierColor(avg: number): string {
   if (avg >= EXCELLENT_THRESHOLD) return 'var(--success)';
@@ -20,22 +21,12 @@ function average(values: number[]): number {
 }
 
 export function StudentDashboard() {
-  const [grades, setGrades] = useState<GradeSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiClient
-      .get<GradeSummary[]>('/student/grades')
-      .then((response) => setGrades(response.data))
-      .catch((err) => setError(extractErrorMessage(err)))
-      .finally(() => setLoading(false));
-  }, []);
+  const { grades, error, loading } = useStudentGrades();
 
   const stats = useMemo(() => {
     if (grades.length === 0) return null;
     const overallAvg = average(grades.map((g) => g.grade));
-    const excellentCount = grades.filter((g) => g.grade >= EXCELLENT_THRESHOLD).length;
+    const excellentCount = grades.filter((g) => g.grade >= TOP_GRADE).length;
     const subjects = new Set(grades.map((g) => g.subject));
 
     const bySubject = new Map<string, number[]>();

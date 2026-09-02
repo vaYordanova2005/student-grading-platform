@@ -11,24 +11,32 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Random;
 
 /**
  * Seeds 8 teachers, 8 subjects, 20 students, and a spread of grades so the
- * dashboards have real data to render. Skips itself once the first demo
- * teacher already exists, so it only ever runs once per database.
+ * dashboards have real data to render. Disabled by default — opt in with
+ * {@code SEED_DEMO_DATA=true}. Skips itself once the first demo teacher
+ * already exists, so it only ever runs once per database. Usernames/passwords
+ * are generated to satisfy {@link com.markly.backend.service.UserValidationService}
+ * so demo accounts behave exactly like admin-created ones; see README for the
+ * shared demo credentials.
  */
 @Component
 public class DemoDataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
 
-    private static final String DEMO_PASSWORD = "password12345";
+    static final String DEMO_TEACHER_PASSWORD = "password12345";
+    static final String DEMO_STUDENT_PASSWORD = "1234567890";
+
     private static final int TEACHER_COUNT = 8;
     private static final int STUDENT_COUNT = 20;
     private static final long RANDOM_SEED = 42L;
+    private static final long FIRST_FACULTY_NUMBER = 200000001L;
 
     private static final List<String> SUBJECTS = List.of(
             "Математически анализ",
@@ -41,49 +49,64 @@ public class DemoDataSeeder implements CommandLineRunner {
             "Компютърни мрежи"
     );
 
+    // Teacher usernames must match ^[a-z]+@uni-sofia.bg$ (letters only, no digits).
+    private static final List<String> TEACHER_HANDLES = List.of(
+            "teachera", "teacherb", "teacherc", "teacherd",
+            "teachere", "teacherf", "teacherg", "teacherh"
+    );
+
     private final UserRepository userRepository;
     private final GradeRepository gradeRepository;
     private final PasswordEncoder passwordEncoder;
+    private final boolean enabled;
 
-    @Value("${app.seed-demo-data.enabled:true}")
-    private boolean enabled;
-
-    public DemoDataSeeder(UserRepository userRepository, GradeRepository gradeRepository, PasswordEncoder passwordEncoder) {
+    public DemoDataSeeder(
+            UserRepository userRepository,
+            GradeRepository gradeRepository,
+            PasswordEncoder passwordEncoder,
+            @Value("${app.seed-demo-data.enabled:false}") boolean enabled) {
         this.userRepository = userRepository;
         this.gradeRepository = gradeRepository;
         this.passwordEncoder = passwordEncoder;
+        this.enabled = enabled;
     }
 
     @Override
+    @Transactional
     public void run(String... args) {
-        if (!enabled || userRepository.existsByUsernameIgnoreCase("teacher1@test.com")) {
+        if (!enabled || userRepository.existsByUsernameIgnoreCase(TEACHER_HANDLES.get(0) + "@uni-sofia.bg")) {
             return;
         }
 
-        for (int i = 1; i <= TEACHER_COUNT; i++) {
-            String username = "teacher" + i + "@test.com";
-            userRepository.save(new User(username, passwordEncoder.encode(DEMO_PASSWORD), Role.TEACHER));
-        }
+        List<User> teachers = TEACHER_HANDLES.stream()
+                .map(handle -> userRepository.save(
+                        new User(handle + "@uni-sofia.bg", passwordEncoder.encode(DEMO_TEACHER_PASSWORD), Role.TEACHER)))
+                .toList();
 
         Random random = new Random(RANDOM_SEED);
         int gradeCount = 0;
-        for (int i = 1; i <= STUDENT_COUNT; i++) {
-            String username = "student" + i + "@test.com";
-            User student = userRepository.save(new User(username, passwordEncoder.encode(DEMO_PASSWORD), Role.STUDENT));
+        for (int i = 0; i < STUDENT_COUNT; i++) {
+            String facultyNumber = String.valueOf(FIRST_FACULTY_NUMBER + i);
+            User student = userRepository.save(
+                    new User(facultyNumber, passwordEncoder.encode(DEMO_STUDENT_PASSWORD), Role.STUDENT));
 
-            for (String subject : SUBJECTS) {
+            for (int s = 0; s < SUBJECTS.size(); s++) {
+                String subject = SUBJECTS.get(s);
+                User teacher = teachers.get(s % teachers.size());
                 int gradesForSubject = 2 + random.nextInt(2);
                 for (int g = 0; g < gradesForSubject; g++) {
                     int semester = g % 2 == 0 ? 1 : 2;
-                    gradeRepository.save(new Grade(student, subject, semester, weightedGrade(random)));
+                    gradeRepository.save(new Grade(student, teacher, subject, semester, weightedGrade(random)));
                     gradeCount++;
                 }
             }
         }
 
-        log.info("Seeded demo data: {} teachers (teacher1..{}@test.com), {} students (student1..{}@test.com), "
-                        + "password '{}' for all, {} grades across {} subjects.",
-                TEACHER_COUNT, TEACHER_COUNT, STUDENT_COUNT, STUDENT_COUNT, DEMO_PASSWORD, gradeCount, SUBJECTS.size());
+        log.info("Seeded demo data: {} teachers ({}..{}@uni-sofia.bg), {} students (faculty numbers {}..{}), "
+                        + "{} grades across {} subjects. Demo credentials are documented in README.",
+                TEACHER_COUNT, TEACHER_HANDLES.get(0), TEACHER_HANDLES.get(TEACHER_HANDLES.size() - 1),
+                STUDENT_COUNT, FIRST_FACULTY_NUMBER, FIRST_FACULTY_NUMBER + STUDENT_COUNT - 1,
+                gradeCount, SUBJECTS.size());
     }
 
     private int weightedGrade(Random random) {

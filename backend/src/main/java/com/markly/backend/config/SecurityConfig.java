@@ -24,12 +24,13 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final String allowedOrigin;
 
-    @Value("${cors.allowed-origin}")
-    private String allowedOrigin;
-
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            @Value("${cors.allowed-origin}") String allowedOrigin) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.allowedOrigin = allowedOrigin;
     }
 
     @Bean

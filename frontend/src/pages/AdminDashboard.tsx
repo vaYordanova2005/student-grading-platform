@@ -14,9 +14,14 @@ export function AdminDashboard() {
 
   const loadUsers = async () => {
     setLoading(true);
-    const response = await apiClient.get<UserSummary[]>('/admin/users');
-    setUsers(response.data);
-    setLoading(false);
+    try {
+      const response = await apiClient.get<UserSummary[]>('/admin/users');
+      setUsers(response.data);
+    } catch (err) {
+      setError(extractErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
