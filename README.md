@@ -34,8 +34,15 @@ DB_USERNAME=postgres DB_PASSWORD=<твоята парола> ./mvnw spring-boot:
 `src/main/resources/application.yml`, конфигурируемо през env vars `SEED_ADMIN_USERNAME` /
 `SEED_ADMIN_PASSWORD`). Смени паролата на админа след първи вход.
 
-Конфигурируеми env vars: `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `SERVER_PORT`,
-`JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `FRONTEND_ORIGIN`.
+Конфигурируеми env vars: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`,
+`DB_SSLMODE`, `SERVER_PORT`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `FRONTEND_ORIGIN`.
+
+За отдалечена база (напр. [Neon](https://neon.tech)) сложи `DB_HOST` на хоста от
+connection string-а и `DB_SSLMODE=require`:
+
+```
+DB_HOST=<ep-xxx.neon.tech> DB_NAME=<database> DB_USERNAME=<user> DB_PASSWORD=<password> DB_SSLMODE=require ./mvnw spring-boot:run
+```
 
 ### 3. Frontend
 
