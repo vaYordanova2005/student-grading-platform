@@ -18,4 +18,5 @@ export interface GradeSummary {
   semester: number;
   grade: number;
   createdAt: string;
+  teacherUsername: string | null;
 }

@@ -130,6 +130,70 @@ main {
   margin-top: 0;
 }
 
+details.card {
+  padding: 0;
+  overflow: hidden;
+}
+
+details.card summary {
+  cursor: pointer;
+  padding: 1rem 1.5rem;
+  font-weight: 700;
+  list-style: none;
+}
+
+details.card summary::-webkit-details-marker {
+  display: none;
+}
+
+details.card summary::before {
+  content: '\25B8';
+  display: inline-block;
+  margin-right: 0.6rem;
+  transition: transform 0.15s ease;
+}
+
+details.card[open] summary::before {
+  transform: rotate(90deg);
+}
+
+details.card table {
+  margin: 0 1.5rem 1.5rem;
+  width: calc(100% - 3rem);
+}
+
+details.card p {
+  margin: 0 1.5rem 1.5rem;
+  opacity: 0.75;
+}
+
+.grade-btn {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-weight: 700;
+}
+
+.grade-btn:hover {
+  background: var(--border);
+}
+
+.grade-detail-row td {
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+}
+
+.grade-detail {
+  padding: 0.6rem 0.75rem;
+  background: var(--bg);
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 form label {
   display: flex;
   flex-direction: column;
