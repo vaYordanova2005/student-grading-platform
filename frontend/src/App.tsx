@@ -8,6 +8,7 @@ import { StudentDashboard } from './pages/StudentDashboard';
 import { ProfilePage } from './pages/ProfilePage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
 import { JournalPage } from './pages/JournalPage';
+import { StatisticsPage } from './pages/StatisticsPage';
 
 function HomeRedirect() {
   const { user } = useAuth();
@@ -63,7 +64,7 @@ function AppRoutes() {
         path="/statistics"
         element={
           <ProtectedRoute>
-            <ComingSoonPage title="Статистики" />
+            <StatisticsPage />
           </ProtectedRoute>
         }
       />

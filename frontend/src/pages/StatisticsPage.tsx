@@ -1,0 +1,283 @@
+import { useMemo, type CSSProperties } from 'react';
+import { Layout } from '../routes/Layout';
+import { useAuth } from '../auth/AuthContext';
+import { useStudentGrades } from '../hooks/useStudentGrades';
+import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
+import { average, tierColor, classifySessionTypes } from '../utils/grades';
+
+const SEMESTERS = [1, 2, 3, 4];
+const GRADE_VALUES = [2, 3, 4, 5, 6];
+
+const CHART_WIDTH = 640;
+const CHART_HEIGHT = 180;
+const CHART_PAD_X = 34;
+const CHART_PAD_Y = 20;
+
+function chartX(semester: number): number {
+  const lastSemester = SEMESTERS[SEMESTERS.length - 1];
+  return CHART_PAD_X + ((semester - 1) / (lastSemester - 1)) * (CHART_WIDTH - CHART_PAD_X * 2);
+}
+
+function chartY(avg: number): number {
+  const [minGrade, maxGrade] = [GRADE_VALUES[0], GRADE_VALUES[GRADE_VALUES.length - 1]];
+  return CHART_HEIGHT - CHART_PAD_Y - ((avg - minGrade) / (maxGrade - minGrade)) * (CHART_HEIGHT - CHART_PAD_Y * 2);
+}
+
+export function StatisticsPage() {
+  const { user } = useAuth();
+  const { grades, error, loading } = useStudentGrades(user?.role === 'STUDENT');
+
+  const stats = useMemo(() => {
+    if (grades.length === 0) return null;
+
+    const overallAvg = average(grades.map((g) => g.grade));
+
+    const distribution = GRADE_VALUES.map((value) => {
+      const count = grades.filter((g) => g.grade === value).length;
+      return { value, count, pct: (count / grades.length) * 100 };
+    });
+
+    const bySubject = new Map<string, typeof grades>();
+    for (const g of grades) {
+      bySubject.set(g.subject, [...(bySubject.get(g.subject) ?? []), g]);
+    }
+    const subjectAverages = [...bySubject.entries()]
+      .map(([subject, entries]) => ({ subject, avg: average(entries.map((g) => g.grade)), count: entries.length }))
+      .sort((a, b) => b.avg - a.avg);
+    const bestSubject = subjectAverages[0] ?? null;
+    const worstSubject = subjectAverages.length > 1 ? subjectAverages[subjectAverages.length - 1] : null;
+
+    const bySemester = new Map<number, typeof grades>();
+    for (const g of grades) {
+      bySemester.set(g.semester, [...(bySemester.get(g.semester) ?? []), g]);
+    }
+    const semesterAverages = [...bySemester.entries()]
+      .map(([semester, entries]) => ({ semester, avg: average(entries.map((g) => g.grade)) }))
+      .sort((a, b) => a.semester - b.semester);
+
+    const presentSemesters = semesterAverages.map((s) => s.semester);
+    const subjectMatrix = subjectAverages.map(({ subject }) => {
+      const bySem = new Map<number, number>();
+      for (const semester of presentSemesters) {
+        const entries = grades.filter((g) => g.subject === subject && g.semester === semester);
+        if (entries.length > 0) bySem.set(semester, average(entries.map((g) => g.grade)));
+      }
+      const measured = [...bySem.entries()].sort((a, b) => a[0] - b[0]);
+      let trend: 'up' | 'down' | 'flat' | null = null;
+      if (measured.length > 1) {
+        const diff = measured[measured.length - 1][1] - measured[0][1];
+        trend = diff > 0.25 ? 'up' : diff < -0.25 ? 'down' : 'flat';
+      }
+      return { subject, bySem, trend };
+    });
+
+    const sessionTypes = classifySessionTypes(grades);
+    const retakes = grades.filter((g) => sessionTypes.get(g.id) === 'retake');
+    const regular = grades.filter((g) => sessionTypes.get(g.id) !== 'retake');
+
+    return {
+      overallAvg,
+      total: grades.length,
+      subjectCount: bySubject.size,
+      distribution,
+      subjectAverages,
+      bestSubject,
+      worstSubject,
+      semesterAverages,
+      presentSemesters,
+      subjectMatrix,
+      retakeCount: retakes.length,
+      retakeAvg: retakes.length ? average(retakes.map((g) => g.grade)) : null,
+      regularAvg: regular.length ? average(regular.map((g) => g.grade)) : null,
+    };
+  }, [grades]);
+
+  if (user?.role !== 'STUDENT') {
+    return (
+      <Layout title="Статистики">
+        <section className="card">
+          <p>Тази секция е в процес на разработка.</p>
+        </section>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout title="Статистики">
+      {loading && (
+        <section className="card">
+          <p>Зареждане...</p>
+        </section>
+      )}
+      {error && (
+        <section className="card">
+          <p className="error">{error}</p>
+        </section>
+      )}
+      {!loading && !error && grades.length === 0 && (
+        <section className="card">
+          <p>Все още няма вписани оценки.</p>
+        </section>
+      )}
+
+      {!loading && stats && (
+        <>
+          <div className="stat-strip">
+            <div className="stat-tile" style={{ '--tile-accent': tierColor(stats.overallAvg) } as CSSProperties}>
+              <ChartIcon />
+              <div>
+                <strong>{stats.overallAvg.toFixed(2)}</strong>
+                <span>Общ успех</span>
+              </div>
+            </div>
+            <div className="stat-tile">
+              <JournalIcon />
+              <div>
+                <strong>{stats.total}</strong>
+                <span>Оценки</span>
+              </div>
+            </div>
+            <div className="stat-tile" style={{ '--tile-accent': 'var(--success)' } as CSSProperties}>
+              <TrophyIcon />
+              <div>
+                <strong>{stats.bestSubject ? stats.bestSubject.avg.toFixed(2) : '—'}</strong>
+                <span>{stats.bestSubject?.subject ?? 'Най-силен предмет'}</span>
+              </div>
+            </div>
+            <div className="stat-tile">
+              <BooksIcon />
+              <div>
+                <strong>{stats.retakeCount}</strong>
+                <span>Поправителни</span>
+              </div>
+            </div>
+          </div>
+
+          <section className="card">
+            <h2>Разпределение на оценките</h2>
+            <div className="subject-bars">
+              {stats.distribution.map(({ value, count, pct }) => (
+                <div className="subject-bar-row" key={value}>
+                  <span className="subject-bar-label">Оценка {value}</span>
+                  <div className="bar-track">
+                    <div className="bar-fill" style={{ width: `${pct}%`, background: tierColor(value) }} />
+                  </div>
+                  <span className="subject-bar-value">
+                    {count} <small>({pct.toFixed(0)}%)</small>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {stats.semesterAverages.length > 1 && (
+            <section className="card">
+              <h2>Тенденция по семестри</h2>
+              <div className="trend-chart-wrap">
+                <svg
+                  className="trend-chart"
+                  viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  {GRADE_VALUES.map((value) => (
+                    <g key={value}>
+                      <line
+                        x1={CHART_PAD_X}
+                        x2={CHART_WIDTH - CHART_PAD_X}
+                        y1={chartY(value)}
+                        y2={chartY(value)}
+                        className="trend-grid-line"
+                      />
+                      <text x={4} y={chartY(value) + 4} className="trend-axis-label">
+                        {value}
+                      </text>
+                    </g>
+                  ))}
+                  {SEMESTERS.map((semester) => (
+                    <text
+                      key={semester}
+                      x={chartX(semester)}
+                      y={CHART_HEIGHT - 2}
+                      textAnchor="middle"
+                      className="trend-axis-label"
+                    >
+                      Сем. {semester}
+                    </text>
+                  ))}
+                  <polyline
+                    className="trend-line"
+                    points={stats.semesterAverages
+                      .map(({ semester, avg }) => `${chartX(semester)},${chartY(avg)}`)
+                      .join(' ')}
+                  />
+                  {stats.semesterAverages.map(({ semester, avg }) => (
+                    <circle
+                      key={semester}
+                      cx={chartX(semester)}
+                      cy={chartY(avg)}
+                      r={5}
+                      className="trend-point"
+                      style={{ fill: tierColor(avg) }}
+                    />
+                  ))}
+                </svg>
+              </div>
+            </section>
+          )}
+
+          <section className="card">
+            <h2>По предмети</h2>
+            <div className="subject-matrix-wrap">
+              <table className="subject-matrix">
+                <thead>
+                  <tr>
+                    <th>Предмет</th>
+                    {stats.presentSemesters.map((semester) => (
+                      <th key={semester}>Сем. {semester}</th>
+                    ))}
+                    <th>Среден</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.subjectMatrix.map(({ subject, bySem, trend }) => {
+                    const subjectAvg = stats.subjectAverages.find((s) => s.subject === subject)!.avg;
+                    return (
+                      <tr key={subject}>
+                        <td>{subject}</td>
+                        {stats.presentSemesters.map((semester) => (
+                          <td key={semester}>{bySem.has(semester) ? bySem.get(semester)!.toFixed(2) : '—'}</td>
+                        ))}
+                        <td className={trend ? `delta-${trend}` : undefined}>
+                          {subjectAvg.toFixed(2)}
+                          {trend === 'up' && ' ↑'}
+                          {trend === 'down' && ' ↓'}
+                          {trend === 'flat' && ' →'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {stats.retakeCount > 0 && (
+            <section className="card">
+              <h2>Редовна срещу поправителна сесия</h2>
+              <div className="retake-split">
+                <div className="retake-tile">
+                  <strong>{stats.regularAvg?.toFixed(2) ?? '—'}</strong>
+                  <span>Редовна сесия</span>
+                </div>
+                <div className="retake-tile">
+                  <strong>{stats.retakeAvg?.toFixed(2) ?? '—'}</strong>
+                  <span>Поправителна сесия ({stats.retakeCount})</span>
+                </div>
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </Layout>
+  );
+}

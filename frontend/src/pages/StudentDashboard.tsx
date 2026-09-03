@@ -3,21 +3,7 @@ import { Link } from 'react-router-dom';
 import { Layout } from '../routes/Layout';
 import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
 import { useStudentGrades } from '../hooks/useStudentGrades';
-
-// Thresholds for the 2-6 Bulgarian grading scale.
-const EXCELLENT_THRESHOLD = 5.5; // average tier color cutoff
-const GOOD_THRESHOLD = 4.5;
-const TOP_GRADE = 6; // individual grade counted as "excellent"
-
-function tierColor(avg: number): string {
-  if (avg >= EXCELLENT_THRESHOLD) return 'var(--success)';
-  if (avg >= GOOD_THRESHOLD) return 'var(--primary)';
-  return 'var(--error)';
-}
-
-function average(values: number[]): number {
-  return values.reduce((sum, v) => sum + v, 0) / values.length;
-}
+import { average, tierColor, TOP_GRADE } from '../utils/grades';
 
 export function StudentDashboard() {
   const { grades, error, loading } = useStudentGrades();
