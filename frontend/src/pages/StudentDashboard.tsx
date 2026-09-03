@@ -2,7 +2,6 @@ import { useMemo, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../routes/Layout';
 import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
-import { NetworkField } from '../components/NetworkField';
 import { useStudentGrades } from '../hooks/useStudentGrades';
 
 // Thresholds for the 2-6 Bulgarian grading scale.
@@ -50,15 +49,6 @@ export function StudentDashboard() {
 
   return (
     <Layout>
-      <NetworkField
-        className="home-network-bg"
-        intensity={1.9}
-        minNodes={90}
-        maxNodes={220}
-        areaPerNode={3200}
-        linkDist={85}
-        maxPulses={40}
-      />
       {loading && (
         <section className="card">
           <p>Зареждане...</p>
