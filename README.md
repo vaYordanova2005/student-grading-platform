@@ -52,8 +52,8 @@ dashboards. Disabled by default — only enable it on a local/test database, nev
 a live production database. Demo credentials (valid under the same rules as manually
 created accounts):
 
-* Teachers: `teachera@uni-sofia.bg` … `teacherh@uni-sofia.bg`, password `password12345`
-* Students: `student1@test.com` … `student20@test.com`, password `password12345`
+* Teachers: `teacher1@uni-sofia.bg` … `teacher8@uni-sofia.bg`, password `password12345`
+* Students: `student1@uni-sofia.bg` … `student20@uni-sofia.bg`, password `password12345`
 
 For a remote database (e.g. [Neon](https://neon.tech)), set `DB_HOST` to the host from
 the connection string and `DB_SSLMODE=require`:

@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 @Service
 public class UserValidationService {
 
-    private static final Pattern TEACHER_EMAIL = Pattern.compile("^[a-z]+@uni-sofia\\.bg$");
+    private static final Pattern TEACHER_EMAIL = Pattern.compile("^[a-z]+[0-9]*@uni-sofia\\.bg$");
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     public void validate(Role role, String username, String password) {

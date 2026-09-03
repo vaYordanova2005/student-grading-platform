@@ -15,8 +15,8 @@ national ID (EGN) — nowhere in the active code (`backend/`, `frontend/`). EGN 
 in `legacy/` (the old TCP socket version, unmaintained, do not touch).
 
 * **Admin** — `admin` (fixed username)
-* **Teacher** — must end in `@uni-sofia.bg` (validated with a regex in
-  `UserValidationService`)
+* **Teacher** — must end in `@uni-sofia.bg`, local part letters optionally followed by
+  digits (validated with a regex in `UserValidationService`)
 * **Student** — any valid email, no domain restriction
 
 Password for both roles: **at least 5 characters**, no format restrictions (not EGN, not
@@ -26,8 +26,8 @@ digits-only).
 
 `SEED_DEMO_DATA=true` on first startup creates:
 
-* 8 teachers: `teachera@uni-sofia.bg` … `teacherh@uni-sofia.bg`
-* 20 students: `student1@test.com` … `student20@test.com`
+* 8 teachers: `teacher1@uni-sofia.bg` … `teacher8@uni-sofia.bg`
+* 20 students: `student1@uni-sofia.bg` … `student20@uni-sofia.bg`
 * ~400 grades across 8 subjects
 
 ## Passwords

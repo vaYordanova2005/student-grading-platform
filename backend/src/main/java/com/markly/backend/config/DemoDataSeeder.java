@@ -48,10 +48,10 @@ public class DemoDataSeeder implements CommandLineRunner {
             "Компютърни мрежи"
     );
 
-    // Teacher usernames must match ^[a-z]+@uni-sofia.bg$ (letters only, no digits).
+    // Teacher usernames must match ^[a-z]+[0-9]*@uni-sofia.bg$.
     private static final List<String> TEACHER_HANDLES = List.of(
-            "teachera", "teacherb", "teacherc", "teacherd",
-            "teachere", "teacherf", "teacherg", "teacherh"
+            "teacher1", "teacher2", "teacher3", "teacher4",
+            "teacher5", "teacher6", "teacher7", "teacher8"
     );
 
     private final UserRepository userRepository;
@@ -85,7 +85,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         Random random = new Random(RANDOM_SEED);
         int gradeCount = 0;
         for (int i = 1; i <= STUDENT_COUNT; i++) {
-            String username = "student" + i + "@test.com";
+            String username = "student" + i + "@uni-sofia.bg";
             User student = userRepository.save(
                     new User(username, passwordEncoder.encode(DEMO_STUDENT_PASSWORD), Role.STUDENT));
 
@@ -101,7 +101,7 @@ public class DemoDataSeeder implements CommandLineRunner {
             }
         }
 
-        log.info("Seeded demo data: {} teachers ({}..{}@uni-sofia.bg), {} students (student1..{}@test.com), "
+        log.info("Seeded demo data: {} teachers ({}..{}@uni-sofia.bg), {} students (student1..{}@uni-sofia.bg), "
                         + "{} grades across {} subjects. Demo credentials are documented in README.",
                 TEACHER_COUNT, TEACHER_HANDLES.get(0), TEACHER_HANDLES.get(TEACHER_HANDLES.size() - 1),
                 STUDENT_COUNT, STUDENT_COUNT,
