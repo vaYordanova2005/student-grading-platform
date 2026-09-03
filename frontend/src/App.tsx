@@ -7,6 +7,7 @@ import { TeacherDashboard } from './pages/TeacherDashboard';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { ProfilePage } from './pages/ProfilePage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
+import { JournalPage } from './pages/JournalPage';
 
 function HomeRedirect() {
   const { user } = useAuth();
@@ -54,7 +55,7 @@ function AppRoutes() {
         path="/journal"
         element={
           <ProtectedRoute>
-            <ComingSoonPage title="Дневник" />
+            <JournalPage />
           </ProtectedRoute>
         }
       />

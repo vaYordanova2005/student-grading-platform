@@ -12,7 +12,7 @@ class UserValidationServiceTest {
 
     @Test
     void acceptsValidTeacher() {
-        assertDoesNotThrow(() -> service.validate(Role.TEACHER, "ivanov@tu-sofia.bg", "secret"));
+        assertDoesNotThrow(() -> service.validate(Role.TEACHER, "ivanov@uni-sofia.bg", "secret"));
     }
 
     @Test
@@ -24,7 +24,7 @@ class UserValidationServiceTest {
     @Test
     void rejectsTeacherWithShortPassword() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.validate(Role.TEACHER, "ivanov@tu-sofia.bg", "ab"));
+                () -> service.validate(Role.TEACHER, "ivanov@uni-sofia.bg", "ab"));
     }
 
     @Test

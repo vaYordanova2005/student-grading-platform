@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import apiClient, { extractErrorMessage } from '../api/client';
+import { useMemo, type CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import { Layout } from '../routes/Layout';
-import type { GradeSummary } from '../types';
 import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
+import { NetworkField } from '../components/NetworkField';
+import { useStudentGrades } from '../hooks/useStudentGrades';
 
-const EXCELLENT_THRESHOLD = 5.5;
+// Thresholds for the 2-6 Bulgarian grading scale.
+const EXCELLENT_THRESHOLD = 5.5; // average tier color cutoff
 const GOOD_THRESHOLD = 4.5;
+const TOP_GRADE = 6; // individual grade counted as "excellent"
 
 function tierColor(avg: number): string {
   if (avg >= EXCELLENT_THRESHOLD) return 'var(--success)';
@@ -18,22 +21,12 @@ function average(values: number[]): number {
 }
 
 export function StudentDashboard() {
-  const [grades, setGrades] = useState<GradeSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiClient
-      .get<GradeSummary[]>('/student/grades')
-      .then((response) => setGrades(response.data))
-      .catch((err) => setError(extractErrorMessage(err)))
-      .finally(() => setLoading(false));
-  }, []);
+  const { grades, error, loading } = useStudentGrades();
 
   const stats = useMemo(() => {
     if (grades.length === 0) return null;
     const overallAvg = average(grades.map((g) => g.grade));
-    const excellentCount = grades.filter((g) => g.grade >= EXCELLENT_THRESHOLD).length;
+    const excellentCount = grades.filter((g) => g.grade >= TOP_GRADE).length;
     const subjects = new Set(grades.map((g) => g.subject));
 
     const bySubject = new Map<string, number[]>();
@@ -56,7 +49,16 @@ export function StudentDashboard() {
   }, [grades]);
 
   return (
-    <Layout title="Начало">
+    <Layout>
+      <NetworkField
+        className="home-network-bg"
+        intensity={1.9}
+        minNodes={90}
+        maxNodes={220}
+        areaPerNode={3200}
+        linkDist={85}
+        maxPulses={40}
+      />
       {loading && (
         <section className="card">
           <p>Зареждане...</p>
@@ -76,20 +78,24 @@ export function StudentDashboard() {
       {!loading && stats && (
         <>
           <div className="stat-strip">
-            <div className="stat-tile" style={{ '--tile-accent': tierColor(stats.overallAvg) } as CSSProperties}>
+            <Link
+              to="/journal"
+              className="stat-tile"
+              style={{ '--tile-accent': tierColor(stats.overallAvg) } as CSSProperties}
+            >
               <ChartIcon />
               <div>
                 <strong>{stats.overallAvg.toFixed(2)}</strong>
                 <span>Успех</span>
               </div>
-            </div>
-            <div className="stat-tile">
+            </Link>
+            <Link to="/journal" className="stat-tile">
               <JournalIcon />
               <div>
                 <strong>{grades.length}</strong>
                 <span>Оценки</span>
               </div>
-            </div>
+            </Link>
             <div className="stat-tile" style={{ '--tile-accent': 'var(--success)' } as CSSProperties}>
               <TrophyIcon />
               <div>
@@ -141,28 +147,6 @@ export function StudentDashboard() {
               </div>
             </section>
           )}
-
-          <section className="card">
-            <h2>Всички оценки</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Семестър</th>
-                  <th>Предмет</th>
-                  <th>Оценка</th>
-                </tr>
-              </thead>
-              <tbody>
-                {grades.map((g) => (
-                  <tr key={g.id}>
-                    <td>{g.semester}</td>
-                    <td>{g.subject}</td>
-                    <td>{g.grade}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
         </>
       )}
     </Layout>

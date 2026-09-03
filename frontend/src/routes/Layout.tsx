@@ -1,19 +1,20 @@
 import type { ReactNode } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { HomeIcon, JournalIcon, ChartIcon, CalendarIcon, ProfileIcon } from '../components/icons';
 
-const navItems = [
-  { to: '/', label: 'Начало', icon: HomeIcon, end: true },
-  { to: '/journal', label: 'Дневник', icon: JournalIcon },
-  { to: '/statistics', label: 'Статистики', icon: ChartIcon },
-  { to: '/calendar', label: 'Календар', icon: CalendarIcon },
-  { to: '/profile', label: 'Профил', icon: ProfileIcon },
-];
-
-export function Layout({ title, children }: { title: string; children: ReactNode }) {
+export function Layout({ title, children }: { title?: string; children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const homePath = user ? `/${user.role.toLowerCase()}` : '/';
+  const navItems = [
+    { to: homePath, label: 'Начало', icon: HomeIcon, end: true },
+    { to: '/journal', label: 'Дневник', icon: JournalIcon },
+    { to: '/statistics', label: 'Статистики', icon: ChartIcon },
+    { to: '/calendar', label: 'Календар', icon: CalendarIcon },
+    { to: '/profile', label: 'Профил', icon: ProfileIcon },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -23,7 +24,7 @@ export function Layout({ title, children }: { title: string; children: ReactNode
   return (
     <div className="page">
       <header className="topbar">
-        <span className="brand">Markly</span>
+        <Link to="/" className="brand">Markly</Link>
         <nav className="topnav">
           {navItems.map(({ to, label, icon: ItemIcon, end }) => (
             <NavLink
@@ -45,7 +46,7 @@ export function Layout({ title, children }: { title: string; children: ReactNode
         </div>
       </header>
       <main>
-        <h2 className="page-title">{title}</h2>
+        {title && <h2 className="page-title">{title}</h2>}
         {children}
       </main>
     </div>

@@ -17,4 +17,5 @@ export interface GradeSummary {
   subject: string;
   semester: number;
   grade: number;
+  createdAt: string;
 }
