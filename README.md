@@ -8,7 +8,7 @@ Teacher / Student — admin създава потребители, учител 
 
 ## Технологии
 
-* Backend: Java 21, Spring Boot, Spring Security (JWT), Spring Data JPA, Flyway, Maven
+* Backend: Java 25, Spring Boot, Spring Security (JWT), Spring Data JPA, Flyway, Maven
 * Frontend: React, TypeScript, Vite, React Router
 * База данни: PostgreSQL
 
