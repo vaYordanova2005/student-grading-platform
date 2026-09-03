@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record CreateUserRequest(
-        @NotNull Role role,
-        @NotBlank String username,
-        @NotBlank String password
+        @NotNull(message = "Ролята е задължителна") Role role,
+        @NotBlank(message = "Потребителското име е задължително") String username,
+        @NotBlank(message = "Паролата е задължителна") String password
 ) {
 }

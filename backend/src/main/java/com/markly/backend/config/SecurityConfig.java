@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -65,8 +66,7 @@ public class SecurityConfig {
      * for an authenticated-but-forbidden one, so the frontend can't tell
      * "your session is gone" from "you don't have access" apart. This makes
      * the unauthenticated case a proper 401; genuine authorization failures
-     * (authenticated, wrong role) still fall through to the default
-     * AccessDeniedHandler and stay 403.
+     * (authenticated, wrong role) stay 403 via {@link #accessDeniedHandler}.
      */
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint(ObjectMapper objectMapper) {
@@ -77,14 +77,33 @@ public class SecurityConfig {
         };
     }
 
+    /**
+     * Authorization failures are raised by the filter chain, before the
+     * request ever reaches the MVC layer, so {@code ApiExceptionHandler}
+     * never sees them; the default handler answers 403 with an empty body.
+     * This gives them the same JSON shape as every other error response.
+     */
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler(ObjectMapper objectMapper) {
+        return (request, response, deniedException) -> {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            objectMapper.writeValue(response.getWriter(), new ApiError("Нямате достъп за това действие"));
+        };
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http, AuthenticationEntryPoint authenticationEntryPoint) throws Exception {
+            HttpSecurity http,
+            AuthenticationEntryPoint authenticationEntryPoint,
+            AccessDeniedHandler accessDeniedHandler) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> {})
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint))
+                .exceptionHandling(handling -> handling
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

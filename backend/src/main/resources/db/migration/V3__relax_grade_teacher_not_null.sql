@@ -1,0 +1,12 @@
+-- V2 originally shipped with `ALTER TABLE grades ALTER COLUMN teacher_id SET NOT NULL`
+-- and was later edited in place to drop that statement (a database with grades but no
+-- teacher account would have failed the migration outright). Databases that applied the
+-- original V2 therefore still carry the NOT NULL constraint, while databases migrated
+-- from scratch do not — this statement converges both. Dropping a constraint that isn't
+-- there is a no-op, so it is safe to run everywhere.
+--
+-- Note for anyone who applied the original V2: Flyway will also report a checksum
+-- mismatch on V2 itself, since that file changed after it was applied. Run
+-- `flyway repair` (or Flyway's repair() from the app) against such a database once;
+-- this migration handles the schema half of the divergence.
+ALTER TABLE grades ALTER COLUMN teacher_id DROP NOT NULL;
