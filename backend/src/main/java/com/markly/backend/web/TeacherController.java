@@ -33,7 +33,7 @@ public class TeacherController {
             @AuthenticationPrincipal AppUserPrincipal principal) {
         User student = userRepository.findByUsernameIgnoreCase(request.studentUsername())
                 .filter(u -> u.getRole() == Role.STUDENT)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Невалиден факултетен номер"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Невалиден имейл на ученик"));
 
         Grade grade = new Grade(student, principal.getUser(), request.subject(), request.semester(), request.grade());
         return GradeResponse.from(gradeRepository.save(grade));

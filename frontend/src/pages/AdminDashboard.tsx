@@ -57,11 +57,16 @@ export function AdminDashboard() {
             </select>
           </label>
           <label>
-            {role === 'TEACHER' ? 'Имейл (@uni-sofia.bg)' : 'Факултетен номер (9 цифри)'}
-            <input value={username} onChange={(e) => setUsername(e.target.value)} required />
+            {role === 'TEACHER' ? 'Имейл (@uni-sofia.bg)' : 'Имейл'}
+            <input
+              type="email"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
           </label>
           <label>
-            {role === 'TEACHER' ? 'Парола (мин. 5 символа)' : 'ЕГН (10 цифри)'}
+            Парола (мин. 5 символа)
             <input
               type="password"
               value={password}

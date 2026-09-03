@@ -29,19 +29,19 @@ class UserValidationServiceTest {
 
     @Test
     void acceptsValidStudent() {
-        assertDoesNotThrow(() -> service.validate(Role.STUDENT, "123456789", "1234567890"));
+        assertDoesNotThrow(() -> service.validate(Role.STUDENT, "student1@test.com", "1234567890"));
     }
 
     @Test
-    void rejectsStudentWithBadFacultyNumber() {
+    void rejectsStudentWithInvalidEmail() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.validate(Role.STUDENT, "12345", "1234567890"));
+                () -> service.validate(Role.STUDENT, "not-an-email", "1234567890"));
     }
 
     @Test
-    void rejectsStudentWithBadEgn() {
+    void rejectsStudentWithShortPassword() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.validate(Role.STUDENT, "123456789", "123"));
+                () -> service.validate(Role.STUDENT, "student1@test.com", "123"));
     }
 
     @Test

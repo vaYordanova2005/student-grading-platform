@@ -8,7 +8,7 @@ Teacher / Student — admin създава потребители, учител 
 
 ## Технологии
 
-* Backend: Java 25, Spring Boot, Spring Security (JWT), Spring Data JPA, Flyway, Maven
+* Backend: Java 21, Spring Boot, Spring Security (JWT), Spring Data JPA, Flyway, Maven
 * Frontend: React, TypeScript, Vite, React Router
 * База данни: PostgreSQL
 
@@ -51,7 +51,7 @@ SEED_ADMIN_PASSWORD=<парола за администраторския ака
 акаунти):
 
 * Учители: `teachera@uni-sofia.bg` … `teacherh@uni-sofia.bg`, парола `password12345`
-* Ученици: факултетни номера `200000001` … `200000020`, парола `1234567890`
+* Ученици: `student1@test.com` … `student20@test.com`, парола `password12345`
 
 За отдалечена база (напр. [Neon](https://neon.tech)) сложи `DB_HOST` на хоста от
 connection string-а и `DB_SSLMODE=require`:
@@ -73,6 +73,6 @@ npm run dev
 ## Роли
 
 * **Admin** → създава teacher/student акаунти (username за teacher: `@uni-sofia.bg` имейл;
-  за student: 9-цифрен факултетен номер, парола = 10-цифрено ЕГН)
-* **Teacher** → вписва оценки на ученици по факултетен номер
+  за student: произволен имейл, парола поне 5 символа)
+* **Teacher** → вписва оценки на ученици по имейл
 * **Student** → вижда собствените си оценки

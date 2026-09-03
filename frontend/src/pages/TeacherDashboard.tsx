@@ -33,8 +33,9 @@ export function TeacherDashboard() {
         <h2>Добави оценка</h2>
         <form onSubmit={handleSubmit} className="inline-form">
           <label>
-            Факултетен номер
+            Имейл на ученика
             <input
+              type="email"
               value={studentUsername}
               onChange={(e) => setStudentUsername(e.target.value)}
               required

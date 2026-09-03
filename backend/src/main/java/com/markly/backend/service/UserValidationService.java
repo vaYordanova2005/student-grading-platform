@@ -9,8 +9,7 @@ import java.util.regex.Pattern;
 public class UserValidationService {
 
     private static final Pattern TEACHER_EMAIL = Pattern.compile("^[a-z]+@uni-sofia\\.bg$");
-    private static final Pattern STUDENT_FACULTY_NUMBER = Pattern.compile("^\\d{9}$");
-    private static final Pattern STUDENT_EGN = Pattern.compile("^\\d{10}$");
+    private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     public void validate(Role role, String username, String password) {
         switch (role) {
@@ -30,11 +29,11 @@ public class UserValidationService {
     }
 
     private void validateStudent(String username, String password) {
-        if (!STUDENT_FACULTY_NUMBER.matcher(username).matches()) {
-            throw new IllegalArgumentException("Потребителското име на ученика (факултетен номер) трябва да е точно 9 цифри");
+        if (!EMAIL.matcher(username).matches()) {
+            throw new IllegalArgumentException("Потребителското име на ученика трябва да е валиден имейл адрес");
         }
-        if (!STUDENT_EGN.matcher(password).matches()) {
-            throw new IllegalArgumentException("Паролата на ученика (ЕГН) трябва да е точно 10 цифри");
+        if (password.length() < 5) {
+            throw new IllegalArgumentException("Паролата на ученика трябва да е поне 5 символа");
         }
     }
 }

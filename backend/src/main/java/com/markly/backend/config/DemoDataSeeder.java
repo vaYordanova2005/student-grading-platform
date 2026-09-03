@@ -31,12 +31,11 @@ public class DemoDataSeeder implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
 
     static final String DEMO_TEACHER_PASSWORD = "password12345";
-    static final String DEMO_STUDENT_PASSWORD = "1234567890";
+    static final String DEMO_STUDENT_PASSWORD = "password12345";
 
     private static final int TEACHER_COUNT = 8;
     private static final int STUDENT_COUNT = 20;
     private static final long RANDOM_SEED = 42L;
-    private static final long FIRST_FACULTY_NUMBER = 200000001L;
 
     private static final List<String> SUBJECTS = List.of(
             "Математически анализ",
@@ -85,10 +84,10 @@ public class DemoDataSeeder implements CommandLineRunner {
 
         Random random = new Random(RANDOM_SEED);
         int gradeCount = 0;
-        for (int i = 0; i < STUDENT_COUNT; i++) {
-            String facultyNumber = String.valueOf(FIRST_FACULTY_NUMBER + i);
+        for (int i = 1; i <= STUDENT_COUNT; i++) {
+            String username = "student" + i + "@test.com";
             User student = userRepository.save(
-                    new User(facultyNumber, passwordEncoder.encode(DEMO_STUDENT_PASSWORD), Role.STUDENT));
+                    new User(username, passwordEncoder.encode(DEMO_STUDENT_PASSWORD), Role.STUDENT));
 
             for (int s = 0; s < SUBJECTS.size(); s++) {
                 String subject = SUBJECTS.get(s);
@@ -102,10 +101,10 @@ public class DemoDataSeeder implements CommandLineRunner {
             }
         }
 
-        log.info("Seeded demo data: {} teachers ({}..{}@uni-sofia.bg), {} students (faculty numbers {}..{}), "
+        log.info("Seeded demo data: {} teachers ({}..{}@uni-sofia.bg), {} students (student1..{}@test.com), "
                         + "{} grades across {} subjects. Demo credentials are documented in README.",
                 TEACHER_COUNT, TEACHER_HANDLES.get(0), TEACHER_HANDLES.get(TEACHER_HANDLES.size() - 1),
-                STUDENT_COUNT, FIRST_FACULTY_NUMBER, FIRST_FACULTY_NUMBER + STUDENT_COUNT - 1,
+                STUDENT_COUNT, STUDENT_COUNT,
                 gradeCount, SUBJECTS.size());
     }
 
