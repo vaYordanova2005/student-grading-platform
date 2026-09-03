@@ -21,8 +21,12 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      if ((status === 401 || status === 403) && localStorage.getItem(STORAGE_KEY)) {
+      // 401 = not authenticated (missing/expired/invalid token) -> session is
+      // dead, log out. 403 = authenticated but not allowed -> a legitimate
+      // authorization outcome, not a reason to end the session (the backend
+      // now returns a real AuthenticationEntryPoint-driven 401 for the
+      // unauthenticated case, so this distinction is reliable).
+      if (error.response?.status === 401 && localStorage.getItem(STORAGE_KEY)) {
         localStorage.removeItem(STORAGE_KEY);
         if (window.location.pathname !== '/login') {
           window.location.assign('/login');

@@ -13,6 +13,7 @@ export function useStudentGrades(enabled = true) {
       return;
     }
     setLoading(true);
+    setError(null);
     apiClient
       .get<GradeSummary[]>('/student/grades')
       .then((response) => setGrades(response.data))

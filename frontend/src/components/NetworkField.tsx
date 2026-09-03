@@ -131,12 +131,20 @@ export function NetworkField({
 
     // Nodes only ever link within `linkDist`, so bucketing them into a grid
     // sized to that distance turns the naive O(n^2) pair scan into ~O(n):
-    // for each node we only visit its own cell and the 8 neighbors.
+    // for each node we only visit its own cell and the 8 neighbors. The grid
+    // is rebuilt every frame (nodes move), so it reuses one Map + numeric
+    // keys instead of allocating a fresh Map with template-literal string
+    // keys each time — cx/cy stay well within +-32768 for any real canvas
+    // size, so packing them into a single integer never collides.
     const cellSize = Math.max(1, linkDist);
-    const cellKey = (cx: number, cy: number) => `${cx},${cy}`;
+    const CELL_KEY_OFFSET = 1 << 15;
+    const CELL_KEY_STRIDE = 1 << 16;
+    const cellKey = (cx: number, cy: number) =>
+      (cx + CELL_KEY_OFFSET) * CELL_KEY_STRIDE + (cy + CELL_KEY_OFFSET);
+    const grid = new Map<number, number[]>();
 
     const buildGrid = () => {
-      const grid = new Map<string, number[]>();
+      grid.clear();
       for (let i = 0; i < nodes.length; i += 1) {
         const n = nodes[i];
         const key = cellKey(Math.floor(n.x / cellSize), Math.floor(n.y / cellSize));
@@ -147,7 +155,7 @@ export function NetworkField({
       return grid;
     };
 
-    const forEachLinkPair = (grid: Map<string, number[]>, visit: (a: Node, b: Node, d2: number) => void) => {
+    const forEachLinkPair = (grid: Map<number, number[]>, visit: (a: Node, b: Node, d2: number) => void) => {
       for (let i = 0; i < nodes.length; i += 1) {
         const a = nodes[i];
         const cx = Math.floor(a.x / cellSize);

@@ -8,10 +8,10 @@ spring:
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     open-in-view: false
   flyway:
-    enabled: false
+    enabled: true
 
 server:
   port: 0

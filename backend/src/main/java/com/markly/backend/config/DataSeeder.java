@@ -38,6 +38,6 @@ public class DataSeeder implements CommandLineRunner {
         }
         User admin = new User(seedAdminUsername, passwordEncoder.encode(seedAdminPassword), Role.ADMIN);
         userRepository.save(admin);
-        log.info("Seeded initial admin user '{}' — change the password after first login.", seedAdminUsername);
+        log.info("Seeded initial admin user '{}'.", seedAdminUsername);
     }
 }

@@ -44,7 +44,7 @@ public class AdminController {
         userValidationService.validate(role, request.username(), request.password());
 
         if (userRepository.existsByUsernameIgnoreCase(request.username())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new IllegalArgumentException("Потребителското име вече съществува");
         }
 
         User user = new User(request.username(), passwordEncoder.encode(request.password()), role);
