@@ -78,9 +78,15 @@ export function StatisticsPage() {
 
     // Same fixed-list-plus-overflow approach as the journal: keeps the usual
     // 1..8 axis stable while still giving an out-of-range semester its own
-    // tick instead of clipping it.
-    const unexpectedSemesters = presentSemesters.filter((s) => !SEMESTERS.includes(s)).sort((a, b) => a - b);
-    const chartSemesters = unexpectedSemesters.length ? [...SEMESTERS, ...unexpectedSemesters] : SEMESTERS;
+    // tick instead of clipping it. Sorted as a whole rather than appended,
+    // since chartX reads domain[0]/domain[last] as the axis bounds — an
+    // unsorted domain (e.g. a legacy semester 0 tacked on after 8) would put
+    // the smaller bound last and invert/overflow the whole line, which is
+    // exactly the case this is meant to fix.
+    const unexpectedSemesters = presentSemesters.filter((s) => !SEMESTERS.includes(s));
+    const chartSemesters = unexpectedSemesters.length
+      ? [...SEMESTERS, ...unexpectedSemesters].sort((a, b) => a - b)
+      : SEMESTERS;
 
     return {
       overallAvg,
