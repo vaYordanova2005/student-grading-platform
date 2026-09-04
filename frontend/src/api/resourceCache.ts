@@ -12,11 +12,20 @@ export interface ResourceCache<T> {
   /**
    * Fetches if nothing has ever loaded, or if what's loaded is older than the
    * cache's TTL. Whatever was already loaded keeps being served — including
-   * while this revalidation is in flight — so calling it on every mount never
-   * causes a flash back to a loading state.
+   * if the revalidation itself fails — so calling it on every mount never
+   * blanks the screen or replaces good data with a transient network error.
+   * A failure is remembered for the TTL just like a success, so a backend
+   * that's down isn't hammered on every mount/focus in the meantime; the
+   * exception is a cache with no TTL (see `createLocalResource`), where a
+   * failure is effectively retried on the very next call.
    */
   ensureFresh(path: string): void;
-  /** Always refetches, bypassing the TTL. */
+  /**
+   * Always starts a fresh request, bypassing both the TTL and any request
+   * already in flight — a caller reaching for this wants the current server
+   * state (e.g. right after its own POST/DELETE), not whatever a
+   * revalidation that started earlier happens to return.
+   */
   refresh(path: string): void;
   clear(): void;
 }
@@ -44,11 +53,15 @@ function createStore<T>(ttlMs: number): Store<T> {
     return !snapshot.loaded || Date.now() - fetchedAt > ttlMs;
   }
 
-  function fetchNow(path: string): Promise<void> {
+  function fetchNow(path: string, force: boolean): Promise<void> {
     lastPath = path;
-    if (inflight) return inflight;
+    if (inflight && !force) return inflight;
+    // Forcing bumps the generation so a request already in flight becomes a
+    // no-op when it resolves — this one is meant to supersede it, not race it.
+    if (force) generation += 1;
     const startedAt = generation;
-    inflight = apiClient
+
+    const request: Promise<void> = apiClient
       .get<T>(path)
       .then(
         (response): void => {
@@ -59,15 +72,25 @@ function createStore<T>(ttlMs: number): Store<T> {
         },
         (err): void => {
           if (startedAt !== generation) return;
-          snapshot = { data: null, error: extractErrorMessage(err), loaded: true };
+          // A background revalidation failing must not blank out data
+          // that's already on screen — only surface the error when there's
+          // nothing to fall back to.
+          snapshot =
+            snapshot.loaded && snapshot.data !== null
+              ? { data: snapshot.data, error: null, loaded: true }
+              : { data: null, error: extractErrorMessage(err), loaded: true };
           fetchedAt = Date.now();
           notify();
         }
       )
       .finally(() => {
-        inflight = null;
+        // A stale request's own `.finally` must not clear a newer `inflight`
+        // that a later `fetchNow` call (e.g. a forced refresh) has since set.
+        if (inflight === request) inflight = null;
       });
-    return inflight;
+
+    inflight = request;
+    return request;
   }
 
   return {
@@ -78,10 +101,10 @@ function createStore<T>(ttlMs: number): Store<T> {
     },
     ensureFresh(path) {
       lastPath = path;
-      if (isStale()) fetchNow(path);
+      if (isStale()) fetchNow(path, false);
     },
     refresh(path) {
-      fetchNow(path);
+      fetchNow(path, true);
     },
     clear() {
       generation += 1;
@@ -91,7 +114,7 @@ function createStore<T>(ttlMs: number): Store<T> {
       notify();
     },
     revalidateIfStale() {
-      if (lastPath && isStale()) fetchNow(lastPath);
+      if (lastPath && isStale()) fetchNow(lastPath, false);
     },
   };
 }
@@ -108,7 +131,7 @@ const registry: Store<unknown>[] = [];
  * mid-visit. To avoid that without giving up the sharing, entries go stale
  * after `ttlMs` and get revalidated in the background — on the next mount
  * that reads them, and whenever the tab regains focus — while continuing to
- * serve what's already cached until the revalidation resolves.
+ * serve what's already cached, including across a revalidation that fails.
  */
 export function createResourceCache<T>(ttlMs = DEFAULT_TTL_MS): ResourceCache<T> {
   const store = createStore<T>(ttlMs);
@@ -117,7 +140,8 @@ export function createResourceCache<T>(ttlMs = DEFAULT_TTL_MS): ResourceCache<T>
 }
 
 /**
- * Same staleness/fetch mechanics as {@link createResourceCache}, but private
+ * Same store/fetch mechanics as {@link createResourceCache}, but with no TTL
+ * (so every call to `ensureFresh` past the first one refetches) and private
  * to a single hook instance: not registered for window-focus revalidation,
  * since nothing else will ever be waiting on it once its one subscriber
  * unmounts. Used by {@link useApiResource} when no shared cache is passed in.
