@@ -77,6 +77,17 @@ body {
   white-space: nowrap;
 }
 
+.topbar-username {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.topbar-username:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
 .topnav {
   display: flex;
   flex-wrap: wrap;
@@ -727,4 +738,46 @@ a.stat-tile:hover {
   background: var(--primary);
   color: var(--primary-contrast);
   border-color: var(--primary);
+}
+
+.profile-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.6rem 1.5rem;
+}
+
+.profile-info-row {
+  display: grid;
+  grid-template-columns: minmax(130px, auto) 1fr;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-info-label {
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.profile-info-value {
+  word-break: break-word;
+}
+
+.profile-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: end;
+}
+
+.profile-edit-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.profile-edit-grid button {
+  align-self: start;
 }

@@ -35,3 +35,20 @@ export interface CalendarEventSummary {
   createdByRole: Role;
   createdAt: string;
 }
+
+export interface StudentProfileSummary {
+  studentUsername: string;
+  degreeLevel: string | null;
+  facultyNumber: string | null;
+  faculty: string | null;
+  specialty: string | null;
+  studyMode: string | null;
+  specialization: string | null;
+  groupNumber: string | null;
+  admissionType: string | null;
+  status: string | null;
+  enrolledSemester: number | null;
+  completedSemester: number | null;
+  stream: string | null;
+  personalEmail: string | null;
+}

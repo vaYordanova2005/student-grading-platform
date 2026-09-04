@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { HomeIcon, JournalIcon, ChartIcon, CalendarIcon, ProfileIcon } from '../components/icons';
+import { HomeIcon, JournalIcon, ChartIcon, CalendarIcon } from '../components/icons';
 
 export function Layout({ title, children }: { title?: string; children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -13,7 +13,6 @@ export function Layout({ title, children }: { title?: string; children: ReactNod
     { to: '/journal', label: 'Дневник', icon: JournalIcon },
     { to: '/statistics', label: 'Статистики', icon: ChartIcon },
     { to: '/calendar', label: 'Календар', icon: CalendarIcon },
-    { to: '/profile', label: 'Профил', icon: ProfileIcon },
   ];
 
   const handleLogout = () => {
@@ -39,9 +38,9 @@ export function Layout({ title, children }: { title?: string; children: ReactNod
           ))}
         </nav>
         <div className="topbar-user">
-          <span>
-            {user?.username} ({user?.role})
-          </span>
+          <Link to="/profile" className="topbar-username">
+            {user?.username}
+          </Link>
           <button onClick={handleLogout}>Изход</button>
         </div>
       </header>

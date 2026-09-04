@@ -2,13 +2,16 @@ import { Fragment, useMemo, useState } from 'react';
 import { Layout } from '../routes/Layout';
 import { useAuth } from '../auth/AuthContext';
 import { useStudentGrades } from '../hooks/useStudentGrades';
+import { useStudentProfile } from '../hooks/useStudentProfile';
 import { classifySessionTypes, FAIL_GRADE } from '../utils/grades';
 
-const SEMESTERS = [1, 2, 3, 4];
+const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 export function JournalPage() {
   const { user } = useAuth();
   const { grades, error, loading } = useStudentGrades(user?.role === 'STUDENT');
+  const { profile } = useStudentProfile(user?.role === 'STUDENT');
+  const currentSemester = profile?.enrolledSemester ?? null;
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const sessionTypeById = useMemo(() => classifySessionTypes(grades), [grades]);
@@ -76,7 +79,7 @@ export function JournalPage() {
             const subjectRows = bySemester.get(semester) ?? [];
             return (
               <details className="card" key={semester}>
-                <summary>Семестър {semester}</summary>
+                <summary>Семестър {semester}{semester === currentSemester ? ' (текущ)' : ''}</summary>
                 {subjectRows.length ? (
                   <table>
                     <thead>

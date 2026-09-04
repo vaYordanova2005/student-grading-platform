@@ -4,9 +4,11 @@ import com.markly.backend.domain.CalendarEvent;
 import com.markly.backend.domain.CalendarEventType;
 import com.markly.backend.domain.Grade;
 import com.markly.backend.domain.Role;
+import com.markly.backend.domain.StudentProfile;
 import com.markly.backend.domain.User;
 import com.markly.backend.repository.CalendarEventRepository;
 import com.markly.backend.repository.GradeRepository;
+import com.markly.backend.repository.StudentProfileRepository;
 import com.markly.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,9 +60,14 @@ public class DemoDataSeeder implements CommandLineRunner {
             "teacher5", "teacher6", "teacher7", "teacher8"
     );
 
+    private static final List<String> FACULTIES = List.of("Факултет компютърни системи и технологии");
+    private static final List<String> SPECIALTIES = List.of("Компютърно и софтуерно инженерство");
+    private static final List<String> ADMISSION_TYPES = List.of("Държавна поръчка", "Платено обучение");
+
     private final UserRepository userRepository;
     private final GradeRepository gradeRepository;
     private final CalendarEventRepository calendarEventRepository;
+    private final StudentProfileRepository studentProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final boolean enabled;
 
@@ -68,11 +75,13 @@ public class DemoDataSeeder implements CommandLineRunner {
             UserRepository userRepository,
             GradeRepository gradeRepository,
             CalendarEventRepository calendarEventRepository,
+            StudentProfileRepository studentProfileRepository,
             PasswordEncoder passwordEncoder,
             @Value("${app.seed-demo-data.enabled:false}") boolean enabled) {
         this.userRepository = userRepository;
         this.gradeRepository = gradeRepository;
         this.calendarEventRepository = calendarEventRepository;
+        this.studentProfileRepository = studentProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.enabled = enabled;
     }
@@ -95,13 +104,16 @@ public class DemoDataSeeder implements CommandLineRunner {
             String username = "student" + i + "@uni-sofia.bg";
             User student = userRepository.save(
                     new User(username, passwordEncoder.encode(DEMO_STUDENT_PASSWORD), Role.STUDENT));
+            int enrolledSemester = 1 + random.nextInt(8);
+            int completedSemesters = Math.max(1, enrolledSemester - 1);
+            studentProfileRepository.save(seedStudentProfile(student, i, enrolledSemester));
 
             for (int s = 0; s < SUBJECTS.size(); s++) {
                 String subject = SUBJECTS.get(s);
                 User teacher = teachers.get(s % teachers.size());
                 int gradesForSubject = 2 + random.nextInt(2);
                 for (int g = 0; g < gradesForSubject; g++) {
-                    int semester = g % 2 == 0 ? 1 : 2;
+                    int semester = 1 + (g % completedSemesters);
                     gradeRepository.save(new Grade(student, teacher, subject, semester, weightedGrade(random)));
                     gradeCount++;
                 }
@@ -151,6 +163,28 @@ public class DemoDataSeeder implements CommandLineRunner {
                 today.plusDays(30),
                 today.plusDays(37),
                 creator));
+    }
+
+    /**
+     * Fictional registrar-style info (faculty number, group, semester
+     * status, etc.) so the profile page isn't empty on a fresh demo
+     * database. Values are generated, not copied from any real record.
+     */
+    private StudentProfile seedStudentProfile(User student, int index, int enrolledSemester) {
+        StudentProfile profile = new StudentProfile(student);
+        profile.setDegreeLevel("Бакалавър");
+        profile.setFacultyNumber(String.format("12%04d", 1000 + index));
+        profile.setFaculty(FACULTIES.get(0));
+        profile.setSpecialty(SPECIALTIES.get(0));
+        profile.setStudyMode("редовно");
+        profile.setGroupNumber(String.valueOf(40 + (index % 6)));
+        profile.setAdmissionType(ADMISSION_TYPES.get(index % ADMISSION_TYPES.size()));
+        profile.setStatus("Записан");
+        profile.setEnrolledSemester(enrolledSemester);
+        profile.setCompletedSemester(Math.max(0, enrolledSemester - 1));
+        profile.setStream(String.valueOf(1 + (index % 12)));
+        profile.setPersonalEmail("student" + index + ".demo@example.com");
+        return profile;
     }
 
     private int weightedGrade(Random random) {

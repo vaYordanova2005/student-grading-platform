@@ -5,7 +5,7 @@ import { useStudentGrades } from '../hooks/useStudentGrades';
 import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
 import { average, tierColor, classifySessionTypes } from '../utils/grades';
 
-const SEMESTERS = [1, 2, 3, 4];
+const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
 const GRADE_VALUES = [2, 3, 4, 5, 6];
 
 const CHART_WIDTH = 640;
