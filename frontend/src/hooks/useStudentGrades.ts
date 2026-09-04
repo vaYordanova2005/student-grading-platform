@@ -1,25 +1,14 @@
-import { useEffect, useState } from 'react';
-import apiClient, { extractErrorMessage } from '../api/client';
+import { createResourceCache } from '../api/resourceCache';
+import { useApiResource } from './useApiResource';
 import type { GradeSummary } from '../types';
 
+// Начало, Дневник and Статистики all render this same list, so without a
+// shared cache every navigation between them refetches identical data.
+const gradesCache = createResourceCache<GradeSummary[]>();
+
+const NO_GRADES: GradeSummary[] = [];
+
 export function useStudentGrades(enabled = true) {
-  const [grades, setGrades] = useState<GradeSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(enabled);
-
-  useEffect(() => {
-    if (!enabled) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    apiClient
-      .get<GradeSummary[]>('/student/grades')
-      .then((response) => setGrades(response.data))
-      .catch((err) => setError(extractErrorMessage(err)))
-      .finally(() => setLoading(false));
-  }, [enabled]);
-
-  return { grades, error, loading };
+  const { data, error, loading, reload } = useApiResource<GradeSummary[]>('/student/grades', enabled, gradesCache);
+  return { grades: data ?? NO_GRADES, error, loading, reload };
 }

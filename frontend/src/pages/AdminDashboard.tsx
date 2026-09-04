@@ -66,21 +66,31 @@ export function AdminDashboard() {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
 
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const response = await apiClient.get<UserSummary[]>('/admin/users');
-      setUsers(response.data);
-    } catch (err) {
-      setError(extractErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // The list is refetched by bumping this rather than by calling a loader
+  // function from the effect: a loader that sets state synchronously makes
+  // React render twice on mount, and a late response could overwrite a newer
+  // one — the `ignore` flag below rules that out.
+  const [usersToken, setUsersToken] = useState(0);
+  const reloadUsers = () => setUsersToken((token) => token + 1);
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    let ignore = false;
+    apiClient.get<UserSummary[]>('/admin/users').then(
+      (response) => {
+        if (ignore) return;
+        setUsers(response.data);
+        setLoading(false);
+      },
+      (err) => {
+        if (ignore) return;
+        setError(extractErrorMessage(err));
+        setLoading(false);
+      }
+    );
+    return () => {
+      ignore = true;
+    };
+  }, [usersToken]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -90,7 +100,7 @@ export function AdminDashboard() {
       await apiClient.post('/admin/users', { role, username, password });
       setUsername('');
       setPassword('');
-      await loadUsers();
+      reloadUsers();
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import { HomeIcon, JournalIcon, ChartIcon, CalendarIcon } from '../components/icons';
 import { NetworkField } from '../components/NetworkField';
 
@@ -9,11 +9,19 @@ export function Layout({ title, children }: { title?: string; children: ReactNod
   const navigate = useNavigate();
 
   const homePath = user ? `/${user.role.toLowerCase()}` : '/';
+  // Дневник and Статистики only ever show a student's own grades; for a
+  // teacher or an admin they answer "в процес на разработка", so they are not
+  // offered in the navigation of those roles.
+  const isStudent = user?.role === 'STUDENT';
   const navItems = [
     { to: homePath, label: 'Начало', icon: HomeIcon, end: true },
-    { to: '/journal', label: 'Дневник', icon: JournalIcon },
-    { to: '/statistics', label: 'Статистики', icon: ChartIcon },
-    { to: '/calendar', label: 'Календар', icon: CalendarIcon },
+    ...(isStudent
+      ? [
+          { to: '/journal', label: 'Дневник', icon: JournalIcon, end: false },
+          { to: '/statistics', label: 'Статистики', icon: ChartIcon, end: false },
+        ]
+      : []),
+    { to: '/calendar', label: 'Календар', icon: CalendarIcon, end: false },
   ];
 
   const handleLogout = () => {

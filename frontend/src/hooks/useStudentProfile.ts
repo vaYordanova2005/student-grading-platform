@@ -1,25 +1,15 @@
-import { useEffect, useState } from 'react';
-import apiClient, { extractErrorMessage } from '../api/client';
+import { createResourceCache } from '../api/resourceCache';
+import { useApiResource } from './useApiResource';
 import type { StudentProfileSummary } from '../types';
 
+// Read by both Профил and Дневник (for the "(текущ)" semester marker).
+const profileCache = createResourceCache<StudentProfileSummary>();
+
 export function useStudentProfile(enabled = true) {
-  const [profile, setProfile] = useState<StudentProfileSummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(enabled);
-
-  useEffect(() => {
-    if (!enabled) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    apiClient
-      .get<StudentProfileSummary>('/student/profile')
-      .then((response) => setProfile(response.data))
-      .catch((err) => setError(extractErrorMessage(err)))
-      .finally(() => setLoading(false));
-  }, [enabled]);
-
-  return { profile, error, loading };
+  const { data, error, loading, reload } = useApiResource<StudentProfileSummary>(
+    '/student/profile',
+    enabled,
+    profileCache
+  );
+  return { profile: data, error, loading, reload };
 }

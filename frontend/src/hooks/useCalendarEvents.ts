@@ -1,25 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
-import apiClient, { extractErrorMessage } from '../api/client';
+import { useApiResource } from './useApiResource';
 import type { CalendarEventSummary } from '../types';
 
+const NO_EVENTS: CalendarEventSummary[] = [];
+
+// Not cached: the calendar page writes as well as reads, so it always wants
+// the current server state rather than whatever was fetched earlier.
 export function useCalendarEvents() {
-  const [events, setEvents] = useState<CalendarEventSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const refresh = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    return apiClient
-      .get<CalendarEventSummary[]>('/calendar/events')
-      .then((response) => setEvents(response.data))
-      .catch((err) => setError(extractErrorMessage(err)))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  return { events, error, loading, refresh };
+  const { data, error, loading, reload } = useApiResource<CalendarEventSummary[]>('/calendar/events');
+  return { events: data ?? NO_EVENTS, error, loading, refresh: reload };
 }

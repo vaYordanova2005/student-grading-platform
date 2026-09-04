@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Layout } from '../routes/Layout';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import { useCalendarEvents } from '../hooks/useCalendarEvents';
 import apiClient, { extractErrorMessage } from '../api/client';
 import type { CalendarEventType } from '../types';
