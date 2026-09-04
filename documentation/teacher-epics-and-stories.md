@@ -36,7 +36,7 @@ email, with no class/subject assignment backing it.
   need to already know every student's email by heart.**
 * **As a teacher, I want to see only the subjects/classes assigned to me, so that I can't
   accidentally grade a student who isn't mine.** (Depends on the academic-structure work
-  described in [`../admin/epics-and-stories.md`](../admin/epics-and-stories.md).)
+  described in [`admin-epics-and-stories.md`](admin-epics-and-stories.md).)
 
 ## Epic 3 — Attendance
 

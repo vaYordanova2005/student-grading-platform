@@ -3,7 +3,7 @@
 A school grading system: Spring Boot REST backend + PostgreSQL + React (TypeScript)
 frontend. Three roles — Admin, Teacher, Student — with JWT authentication.
 
-The old TCP socket version lives in [`legacy/`](../../legacy/) — reference only, not
+The old TCP socket version lives in [`legacy/`](../legacy/) — reference only, not
 touched, not part of the current architecture.
 
 ## Overview
@@ -16,7 +16,7 @@ frontend (React + Vite, TS)  --HTTP/JSON + JWT-->  backend (Spring Boot)  -->  P
   renders the response. The one real exception is regular-vs-retake session
   classification (`frontend/src/utils/grades.ts: classifySessionTypes`): there is no
   session-type field in the database, so the frontend infers it from grade ordering. See
-  [`../student/student.md`](../student/student.md) for what that means for a student.
+  [`student.md`](student.md) for what that means for a student.
 * The backend is the single source of truth: validation, authorization, data access.
 * No separate API gateway / microservices — a monolithic Spring Boot application.
 
@@ -44,7 +44,7 @@ frontend (React + Vite, TS)  --HTTP/JSON + JWT-->  backend (Spring Boot)  -->  P
 
 ### Database
 
-See [`../database/`](../database/) for schema and migrations. Managed with Flyway
+See [`database.md`](database.md) for schema and migrations. Managed with Flyway
 (`backend/src/main/resources/db/migration/`) — versions apply automatically on startup,
 never manual ALTERs in production.
 
@@ -71,11 +71,11 @@ never manual ALTERs in production.
 * **Student** (any email) — sees only their own grades (`GET /api/student/grades`, never
   another student's) across a dashboard, journal and statistics view; sees their own
   registrar profile read-only; sees the shared calendar read-only. Full behavior:
-  [`../student/student.md`](../student/student.md).
+  [`student.md`](student.md).
 
 Full username/password rules: [`decisions.md`](decisions.md).
 
 ## Environments / configuration
 
-Everything configurable goes through env vars (see [README.md](../../README.md) in the
+Everything configurable goes through env vars (see [README.md](../README.md) in the
 repo root) — no hardcoded credentials or connection strings in the code.

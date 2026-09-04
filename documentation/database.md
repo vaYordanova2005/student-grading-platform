@@ -1,9 +1,9 @@
 # Database schema (Markly)
 
 PostgreSQL. Schema is owned by Flyway migrations in
-[`backend/src/main/resources/db/migration/`](../../backend/src/main/resources/db/migration/)
+[`backend/src/main/resources/db/migration/`](../backend/src/main/resources/db/migration/)
 — never edit the schema by hand, add a new migration instead. JPA entities live in
-[`backend/src/main/java/com/markly/backend/domain/`](../../backend/src/main/java/com/markly/backend/domain/).
+[`backend/src/main/java/com/markly/backend/domain/`](../backend/src/main/java/com/markly/backend/domain/).
 
 ## Tables
 
@@ -12,7 +12,7 @@ PostgreSQL. Schema is owned by Flyway migrations in
 | Column | Type | Constraints |
 |---|---|---|
 | `id` | `BIGSERIAL` | PK |
-| `username` | `VARCHAR(255)` | `NOT NULL`, `UNIQUE` — an email address for all roles, see [`../architecture/decisions.md`](../architecture/decisions.md) |
+| `username` | `VARCHAR(255)` | `NOT NULL`, `UNIQUE` — an email address for all roles, see [`decisions.md`](decisions.md) |
 | `password` | `VARCHAR(255)` | `NOT NULL` — hashed, never plaintext |
 | `role` | `VARCHAR(20)` | `NOT NULL`, `CHECK (role IN ('ADMIN', 'TEACHER', 'STUDENT'))` |
 
@@ -138,4 +138,4 @@ since legacy/unattributable rows can still be `NULL`.
   with a `student_profiles` row and grades across every semester up to and including the
   one they're currently enrolled in — ~400 `grades` rows total for the fixed seed), and a
   handful of `calendar_events`. Local/test use only, see
-  [`../architecture/decisions.md`](../architecture/decisions.md).
+  [`decisions.md`](decisions.md).

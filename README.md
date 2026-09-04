@@ -89,5 +89,5 @@ cd frontend && npm test    # vitest; npm run lint and npm run build also gate CI
   profiles (faculty number, group, semester, etc.)
 * **Teacher** → enters student grades by email; creates/deletes calendar events
 * **Student** → views their own grades (dashboard, journal, statistics), and a read-only
-  registrar profile and calendar — see [documentation/student/](documentation/student/)
+  registrar profile and calendar — see [documentation/student.md](documentation/student.md)
   for the full picture
