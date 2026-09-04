@@ -18,8 +18,9 @@ creation; there's no reset endpoint either, for any role).
 Once logged in, a student sees four sections in the top nav (`routes/Layout.tsx`):
 **Начало** (dashboard), **Дневник** (journal), **Статистики** (statistics), **Календар**
 (calendar), plus a profile link under their username. `JournalPage` and `StatisticsPage`
-render "under construction" for any non-STUDENT role, so today they're student-only even
-though the nav item exists for everyone.
+render "under construction" for any non-STUDENT role, and — since both routes are
+student-only in practice — the nav only offers those two items to STUDENT accounts;
+other roles see just Начало and Календар.
 
 ## Dashboard (`/student`, `StudentDashboard.tsx`)
 
@@ -35,10 +36,13 @@ Landing page after login. Pulls all of the student's grades
 
 ## Journal (`/journal`, `JournalPage.tsx`)
 
-All 8 semesters are rendered as collapsible cards (semesters are fixed 1–8; the student's
-own `enrolledSemester`, from their profile, is labeled "текущ"). Inside each semester,
-grades are grouped by subject into one row per subject, with every grade for that
-subject shown as a clickable pill. Clicking a grade expands a detail row with:
+Semesters 1–8 are always rendered as collapsible cards (the student's own
+`enrolledSemester`, from their profile, is labeled "текущ"); any grade whose semester
+falls outside that range — only possible via a legacy row or a direct database write,
+since the backend validates 1–8 on every write — gets its own extra card appended after
+them rather than being silently dropped. Inside each semester, grades are grouped by
+subject into one row per subject, with every grade for that subject shown as a clickable
+pill. Clicking a grade expands a detail row with:
 
 * the date it was recorded,
 * whether it's a **regular** or **retake** session grade — inferred client-side
@@ -55,7 +59,8 @@ A deeper analytical view over the same grade data:
 * Stat tiles: overall average, total grade count, best-performing subject, retake count.
 * **Разпределение на оценките** — bar chart of how many grades fall on each value 2–6.
 * **Тенденция по семестри** — an actual SVG line chart of the semester averages (only
-  shown with grades in 2+ semesters).
+  shown with grades in 2+ semesters); the x-axis is normally 1–8 but stretches to fit
+  any semester outside that range too, the same overflow case the journal handles.
 * **По предмети** — a subject × semester matrix (one row per subject, one column per
   semester with grades in it) with a per-subject overall average and an up/flat/down
   trend arrow comparing the first vs. last measured semester (>0.25 difference to count
