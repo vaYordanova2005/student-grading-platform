@@ -1,9 +1,17 @@
 import { useMemo, type CSSProperties } from 'react';
 import { Layout } from '../routes/Layout';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import { useStudentGrades } from '../hooks/useStudentGrades';
 import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
-import { average, tierColor, classifySessionTypes } from '../utils/grades';
+import {
+  average,
+  classifySessionTypes,
+  gradeColor,
+  groupBy,
+  semesterAverages,
+  subjectAverages,
+  tierColor,
+} from '../utils/grades';
 
 const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
 const GRADE_VALUES = [2, 3, 4, 5, 6];
@@ -37,30 +45,17 @@ export function StatisticsPage() {
       return { value, count, pct: (count / grades.length) * 100 };
     });
 
-    const bySubject = new Map<string, typeof grades>();
-    for (const g of grades) {
-      bySubject.set(g.subject, [...(bySubject.get(g.subject) ?? []), g]);
-    }
-    const subjectAverages = [...bySubject.entries()]
-      .map(([subject, entries]) => ({ subject, avg: average(entries.map((g) => g.grade)), count: entries.length }))
-      .sort((a, b) => b.avg - a.avg);
-    const bestSubject = subjectAverages[0] ?? null;
-    const worstSubject = subjectAverages.length > 1 ? subjectAverages[subjectAverages.length - 1] : null;
+    const bySubject = subjectAverages(grades);
+    const bestSubject = bySubject[0] ?? null;
 
-    const bySemester = new Map<number, typeof grades>();
-    for (const g of grades) {
-      bySemester.set(g.semester, [...(bySemester.get(g.semester) ?? []), g]);
-    }
-    const semesterAverages = [...bySemester.entries()]
-      .map(([semester, entries]) => ({ semester, avg: average(entries.map((g) => g.grade)) }))
-      .sort((a, b) => a.semester - b.semester);
+    const bySemesterAvg = semesterAverages(grades);
+    const presentSemesters = bySemesterAvg.map((s) => s.semester);
 
-    const presentSemesters = semesterAverages.map((s) => s.semester);
-    const subjectMatrix = subjectAverages.map(({ subject }) => {
+    const gradesBySubject = groupBy(grades, (g) => g.subject);
+    const subjectMatrix = bySubject.map(({ subject }) => {
       const bySem = new Map<number, number>();
-      for (const semester of presentSemesters) {
-        const entries = grades.filter((g) => g.subject === subject && g.semester === semester);
-        if (entries.length > 0) bySem.set(semester, average(entries.map((g) => g.grade)));
+      for (const [semester, entries] of groupBy(gradesBySubject.get(subject) ?? [], (g) => g.semester)) {
+        bySem.set(semester, average(entries.map((g) => g.grade)));
       }
       const measured = [...bySem.entries()].sort((a, b) => a[0] - b[0]);
       let trend: 'up' | 'down' | 'flat' | null = null;
@@ -78,12 +73,10 @@ export function StatisticsPage() {
     return {
       overallAvg,
       total: grades.length,
-      subjectCount: bySubject.size,
       distribution,
-      subjectAverages,
+      subjectAverages: bySubject,
       bestSubject,
-      worstSubject,
-      semesterAverages,
+      semesterAverages: bySemesterAvg,
       presentSemesters,
       subjectMatrix,
       retakeCount: retakes.length,
@@ -160,7 +153,7 @@ export function StatisticsPage() {
                 <div className="subject-bar-row" key={value}>
                   <span className="subject-bar-label">Оценка {value}</span>
                   <div className="bar-track">
-                    <div className="bar-fill" style={{ width: `${pct}%`, background: tierColor(value) }} />
+                    <div className="bar-fill" style={{ width: `${pct}%`, background: gradeColor(value) }} />
                   </div>
                   <span className="subject-bar-value">
                     {count} <small>({pct.toFixed(0)}%)</small>

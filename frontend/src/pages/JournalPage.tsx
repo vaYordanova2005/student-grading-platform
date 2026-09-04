@@ -1,9 +1,9 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Layout } from '../routes/Layout';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import { useStudentGrades } from '../hooks/useStudentGrades';
 import { useStudentProfile } from '../hooks/useStudentProfile';
-import { classifySessionTypes, FAIL_GRADE } from '../utils/grades';
+import { byCreatedAt, classifySessionTypes, FAIL_GRADE, groupBy } from '../utils/grades';
 
 const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -19,32 +19,31 @@ export function JournalPage() {
   // Grades are grouped by subject per semester so a retake sits next to its
   // regular-session grade on the same row instead of a separate row.
   const bySemester = useMemo(() => {
-    const semesterGrades = new Map<number, typeof grades>();
-    for (const semester of SEMESTERS) semesterGrades.set(semester, []);
-    for (const g of grades) {
-      const bucket = semesterGrades.get(g.semester);
-      if (bucket) bucket.push(g);
-      else semesterGrades.set(g.semester, [g]);
-    }
-
     const result = new Map<number, { subject: string; entries: typeof grades }[]>();
-    for (const [semester, entries] of semesterGrades) {
-      const bySubject = new Map<string, typeof grades>();
-      for (const g of entries) {
-        const bucket = bySubject.get(g.subject);
-        if (bucket) bucket.push(g);
-        else bySubject.set(g.subject, [g]);
-      }
-      const subjectRows = [...bySubject.entries()]
+    for (const [semester, entries] of groupBy(grades, (g) => g.semester)) {
+      const subjectRows = [...groupBy(entries, (g) => g.subject).entries()]
         .map(([subject, subjectEntries]) => ({
           subject,
-          entries: [...subjectEntries].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+          entries: [...subjectEntries].sort(byCreatedAt),
         }))
         .sort((a, b) => a.subject.localeCompare(b.subject));
       result.set(semester, subjectRows);
     }
     return result;
   }, [grades]);
+
+  /**
+   * The eight regular semesters, plus any semester the data actually contains
+   * outside that range. The backend validates 1..8, so an out-of-range value
+   * can only come from a legacy row or a direct database write — rendering the
+   * fixed list alone would drop those grades from the page without a word.
+   */
+  const semesters = useMemo(() => {
+    const unexpected = [...bySemester.keys()]
+      .filter((semester) => !SEMESTERS.includes(semester))
+      .sort((a, b) => a - b);
+    return [...SEMESTERS, ...unexpected];
+  }, [bySemester]);
 
   if (user?.role !== 'STUDENT') {
     return (
@@ -75,7 +74,7 @@ export function JournalPage() {
       )}
       {!loading && !error && grades.length > 0 && (
         <>
-          {SEMESTERS.map((semester) => {
+          {semesters.map((semester) => {
             const subjectRows = bySemester.get(semester) ?? [];
             return (
               <details className="card" key={semester}>
@@ -99,6 +98,8 @@ export function JournalPage() {
                                   key={g.id}
                                   type="button"
                                   className={g.grade === FAIL_GRADE ? 'grade-btn grade-btn-fail' : 'grade-btn'}
+                                  aria-expanded={expandedId === g.id}
+                                  aria-controls={`grade-detail-${g.id}`}
                                   onClick={() => setExpandedId(expandedId === g.id ? null : g.id)}
                                 >
                                   {g.grade}
@@ -111,7 +112,7 @@ export function JournalPage() {
                               expandedId === g.id && (
                                 <tr className="grade-detail-row" key={g.id}>
                                   <td colSpan={2}>
-                                    <div className="grade-detail">
+                                    <div className="grade-detail" id={`grade-detail-${g.id}`}>
                                       <div>Дата: {new Date(g.createdAt).toLocaleDateString('bg-BG')}</div>
                                       <div>
                                         Тип:{' '}

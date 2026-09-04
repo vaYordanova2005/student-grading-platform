@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Layout } from '../routes/Layout';
 import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
 import { useStudentGrades } from '../hooks/useStudentGrades';
-import { average, tierColor, TOP_GRADE } from '../utils/grades';
+import { average, semesterAverages, subjectAverages, tierColor, TOP_GRADE } from '../utils/grades';
 
 export function StudentDashboard() {
   const { grades, error, loading } = useStudentGrades();
@@ -14,23 +14,13 @@ export function StudentDashboard() {
     const excellentCount = grades.filter((g) => g.grade >= TOP_GRADE).length;
     const subjects = new Set(grades.map((g) => g.subject));
 
-    const bySubject = new Map<string, number[]>();
-    for (const g of grades) {
-      bySubject.set(g.subject, [...(bySubject.get(g.subject) ?? []), g.grade]);
-    }
-    const subjectAverages = [...bySubject.entries()]
-      .map(([subject, values]) => ({ subject, avg: average(values), count: values.length }))
-      .sort((a, b) => b.avg - a.avg);
-
-    const bySemester = new Map<number, number[]>();
-    for (const g of grades) {
-      bySemester.set(g.semester, [...(bySemester.get(g.semester) ?? []), g.grade]);
-    }
-    const semesterAverages = [...bySemester.entries()]
-      .map(([semester, values]) => ({ semester, avg: average(values) }))
-      .sort((a, b) => a.semester - b.semester);
-
-    return { overallAvg, excellentCount, subjectCount: subjects.size, subjectAverages, semesterAverages };
+    return {
+      overallAvg,
+      excellentCount,
+      subjectCount: subjects.size,
+      subjectAverages: subjectAverages(grades),
+      semesterAverages: semesterAverages(grades),
+    };
   }, [grades]);
 
   return (
@@ -97,7 +87,7 @@ export function StudentDashboard() {
                   <div className="bar-track">
                     <div
                       className="bar-fill"
-                      style={{ width: `${(avg / 6) * 100}%`, background: tierColor(avg) }}
+                      style={{ width: `${(avg / TOP_GRADE) * 100}%`, background: tierColor(avg) }}
                     />
                   </div>
                   <span className="subject-bar-value">
