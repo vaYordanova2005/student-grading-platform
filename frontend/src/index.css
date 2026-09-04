@@ -742,13 +742,13 @@ a.stat-tile:hover {
 
 .profile-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 0.6rem 1.5rem;
 }
 
 .profile-info-row {
   display: grid;
-  grid-template-columns: minmax(130px, auto) 1fr;
+  grid-template-columns: 170px 1fr;
   gap: 0.5rem;
   padding: 0.4rem 0;
   border-bottom: 1px solid var(--border);

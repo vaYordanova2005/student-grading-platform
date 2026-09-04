@@ -3,12 +3,6 @@ import { Layout } from '../routes/Layout';
 import { useStudentProfile } from '../hooks/useStudentProfile';
 import type { StudentProfileSummary } from '../types';
 
-const roleLabels: Record<string, string> = {
-  ADMIN: 'Администратор',
-  TEACHER: 'Учител',
-  STUDENT: 'Ученик',
-};
-
 const PROFILE_FIELDS: { key: keyof StudentProfileSummary; label: string }[] = [
   { key: 'degreeLevel', label: 'ОКС' },
   { key: 'facultyNumber', label: 'Фак. номер' },
@@ -22,6 +16,7 @@ const PROFILE_FIELDS: { key: keyof StudentProfileSummary; label: string }[] = [
   { key: 'enrolledSemester', label: 'Записан семестър' },
   { key: 'completedSemester', label: 'Заверен семестър' },
   { key: 'stream', label: 'Поток' },
+  { key: 'studentUsername', label: 'Имейл' },
 ];
 
 export function ProfilePage() {
@@ -30,15 +25,6 @@ export function ProfilePage() {
 
   return (
     <Layout>
-      <section className="card">
-        <p>
-          <strong>Потребителско име:</strong> {user?.username}
-        </p>
-        <p>
-          <strong>Роля:</strong> {user?.role ? (roleLabels[user.role] ?? user.role) : ''}
-        </p>
-      </section>
-
       {user?.role === 'STUDENT' && (
         <section className="card">
           <h2>Информация за студента</h2>
@@ -54,6 +40,12 @@ export function ProfilePage() {
               ))}
             </div>
           )}
+        </section>
+      )}
+
+      {user?.role !== 'STUDENT' && (
+        <section className="card">
+          <p>{user?.username}</p>
         </section>
       )}
     </Layout>
