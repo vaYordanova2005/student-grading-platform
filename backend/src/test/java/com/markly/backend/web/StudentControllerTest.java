@@ -7,6 +7,7 @@ import com.markly.backend.repository.GradeRepository;
 import com.markly.backend.repository.StudentProfileRepository;
 import com.markly.backend.repository.UserRepository;
 import com.markly.backend.security.AppUserPrincipal;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasItem;
@@ -32,8 +35,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * <p>Deliberately not {@code @Transactional}: the request is served in its own
  * persistence context and would not see data still held in an uncommitted test
- * transaction. Fixtures are therefore committed, and kept from colliding
- * between tests by {@link UUID}-based usernames instead of by rollback.
+ * transaction. Fixtures are therefore committed — and, since the H2 instance
+ * backing the test suite stays alive for the whole run ({@code DB_CLOSE_DELAY=-1}),
+ * explicitly deleted again in {@link #tearDown()} so they don't linger for
+ * whatever test class runs next (e.g. one that lists/counts all users).
+ * {@link UUID}-based usernames additionally guard against collisions between
+ * this class's own tests, which all run against the same shared database.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -51,6 +58,9 @@ class StudentControllerTest {
     @Autowired
     private StudentProfileRepository studentProfileRepository;
 
+    private final List<Long> createdUserIds = new ArrayList<>();
+    private final List<Long> createdGradeIds = new ArrayList<>();
+
     private User student;
     private User otherStudent;
 
@@ -60,14 +70,29 @@ class StudentControllerTest {
         student = save("student", Role.STUDENT);
         otherStudent = save("other", Role.STUDENT);
 
-        gradeRepository.save(new Grade(student, teacher, "Програмиране", 1, 6));
-        gradeRepository.save(new Grade(student, teacher, "Бази от данни", 2, 4));
-        gradeRepository.save(new Grade(otherStudent, teacher, "Обща физика", 1, 2));
+        saveGrade(new Grade(student, teacher, "Програмиране", 1, 6));
+        saveGrade(new Grade(student, teacher, "Бази от данни", 2, 4));
+        saveGrade(new Grade(otherStudent, teacher, "Обща физика", 1, 2));
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Grades and profiles reference student_id/teacher_id, so they have to
+        // go before the users they point at.
+        gradeRepository.deleteAllByIdInBatch(createdGradeIds);
+        studentProfileRepository.findByStudent(student).ifPresent(studentProfileRepository::delete);
+        userRepository.deleteAllByIdInBatch(createdUserIds);
     }
 
     private User save(String prefix, Role role) {
         String username = prefix + "-" + UUID.randomUUID() + "@uni-sofia.bg";
-        return userRepository.save(new User(username, "{noop}irrelevant", role));
+        User saved = userRepository.save(new User(username, "{noop}irrelevant", role));
+        createdUserIds.add(saved.getId());
+        return saved;
+    }
+
+    private void saveGrade(Grade grade) {
+        createdGradeIds.add(gradeRepository.save(grade).getId());
     }
 
     @Test

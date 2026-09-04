@@ -2,8 +2,10 @@ package com.markly.backend.web;
 
 import com.markly.backend.domain.Role;
 import com.markly.backend.domain.User;
+import com.markly.backend.repository.StudentProfileRepository;
 import com.markly.backend.repository.UserRepository;
 import com.markly.backend.security.AppUserPrincipal;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * profile page, so an out-of-range semester or an over-long faculty number has
  * to come back as a 400 the admin can act on — not be stored, and not turn
  * into a 500 when the database rejects a value wider than its column.
+ *
+ * <p>The suite's H2 instance stays alive for the whole test run
+ * ({@code DB_CLOSE_DELAY=-1}), so {@link #tearDown()} removes the admin,
+ * student, and any profile the successful-save test creates — a later test
+ * class that lists or counts all users/profiles would otherwise see these.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -35,7 +42,11 @@ class AdminStudentProfileTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private StudentProfileRepository studentProfileRepository;
+
     private User admin;
+    private User studentUser;
     private String studentUsername;
 
     @BeforeEach
@@ -43,7 +54,14 @@ class AdminStudentProfileTest {
         admin = userRepository.save(
                 new User("admin-" + UUID.randomUUID(), "{noop}irrelevant", Role.ADMIN));
         studentUsername = "student-" + UUID.randomUUID() + "@uni-sofia.bg";
-        userRepository.save(new User(studentUsername, "{noop}irrelevant", Role.STUDENT));
+        studentUser = userRepository.save(new User(studentUsername, "{noop}irrelevant", Role.STUDENT));
+    }
+
+    @AfterEach
+    void tearDown() {
+        studentProfileRepository.findByStudent(studentUser).ifPresent(studentProfileRepository::delete);
+        userRepository.delete(admin);
+        userRepository.delete(studentUser);
     }
 
     private String body(String enrolledSemester, String facultyNumber) {
