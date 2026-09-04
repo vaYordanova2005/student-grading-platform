@@ -16,7 +16,6 @@ type ProfileFormState = {
   enrolledSemester: string;
   completedSemester: string;
   stream: string;
-  personalEmail: string;
 };
 
 const PROFILE_FIELD_LABELS: { key: keyof ProfileFormState; label: string; type?: string }[] = [
@@ -32,7 +31,6 @@ const PROFILE_FIELD_LABELS: { key: keyof ProfileFormState; label: string; type?:
   { key: 'enrolledSemester', label: 'Записан семестър', type: 'number' },
   { key: 'completedSemester', label: 'Заверен семестър', type: 'number' },
   { key: 'stream', label: 'Поток' },
-  { key: 'personalEmail', label: 'Личен e-mail' },
 ];
 
 function toFormState(profile: StudentProfileSummary): ProfileFormState {
@@ -49,7 +47,6 @@ function toFormState(profile: StudentProfileSummary): ProfileFormState {
     enrolledSemester: profile.enrolledSemester != null ? String(profile.enrolledSemester) : '',
     completedSemester: profile.completedSemester != null ? String(profile.completedSemester) : '',
     stream: profile.stream ?? '',
-    personalEmail: profile.personalEmail ?? '',
   };
 }
 
@@ -144,7 +141,6 @@ export function AdminDashboard() {
         enrolledSemester: profileForm.enrolledSemester ? Number(profileForm.enrolledSemester) : null,
         completedSemester: profileForm.completedSemester ? Number(profileForm.completedSemester) : null,
         stream: profileForm.stream || null,
-        personalEmail: profileForm.personalEmail || null,
       });
       setProfileSuccess('Профилът е записан');
     } catch (err) {

@@ -85,7 +85,6 @@ public class AdminController {
         profile.setEnrolledSemester(request.enrolledSemester());
         profile.setCompletedSemester(request.completedSemester());
         profile.setStream(request.stream());
-        profile.setPersonalEmail(request.personalEmail());
 
         return StudentProfileResponse.from(studentProfileRepository.save(profile), student.getUsername());
     }

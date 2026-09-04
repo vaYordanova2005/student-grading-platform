@@ -50,5 +50,4 @@ export interface StudentProfileSummary {
   enrolledSemester: number | null;
   completedSemester: number | null;
   stream: string | null;
-  personalEmail: string | null;
 }

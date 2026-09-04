@@ -37,7 +37,6 @@ public class StudentProfile {
     private Integer enrolledSemester;
     private Integer completedSemester;
     private String stream;
-    private String personalEmail;
 
     public StudentProfile(User student) {
         this.student = student;

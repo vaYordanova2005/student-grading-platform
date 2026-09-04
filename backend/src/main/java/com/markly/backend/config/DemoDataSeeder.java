@@ -183,7 +183,6 @@ public class DemoDataSeeder implements CommandLineRunner {
         profile.setEnrolledSemester(enrolledSemester);
         profile.setCompletedSemester(Math.max(0, enrolledSemester - 1));
         profile.setStream(String.valueOf(1 + (index % 12)));
-        profile.setPersonalEmail("student" + index + ".demo@example.com");
         return profile;
     }
 

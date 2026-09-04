@@ -22,7 +22,6 @@ const PROFILE_FIELDS: { key: keyof StudentProfileSummary; label: string }[] = [
   { key: 'enrolledSemester', label: 'Записан семестър' },
   { key: 'completedSemester', label: 'Заверен семестър' },
   { key: 'stream', label: 'Поток' },
-  { key: 'personalEmail', label: 'Личен e-mail' },
 ];
 
 export function ProfilePage() {

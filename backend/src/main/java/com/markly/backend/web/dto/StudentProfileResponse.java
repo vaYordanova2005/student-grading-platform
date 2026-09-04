@@ -15,8 +15,7 @@ public record StudentProfileResponse(
         String status,
         Integer enrolledSemester,
         Integer completedSemester,
-        String stream,
-        String personalEmail
+        String stream
 ) {
     /**
      * {@code username} is passed in explicitly rather than read off
@@ -38,11 +37,10 @@ public record StudentProfileResponse(
                 profile.getStatus(),
                 profile.getEnrolledSemester(),
                 profile.getCompletedSemester(),
-                profile.getStream(),
-                profile.getPersonalEmail());
+                profile.getStream());
     }
 
     public static StudentProfileResponse empty(String username) {
-        return new StudentProfileResponse(username, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        return new StudentProfileResponse(username, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 }

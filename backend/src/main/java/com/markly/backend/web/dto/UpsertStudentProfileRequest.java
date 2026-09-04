@@ -15,7 +15,6 @@ public record UpsertStudentProfileRequest(
         String status,
         Integer enrolledSemester,
         Integer completedSemester,
-        String stream,
-        String personalEmail
+        String stream
 ) {
 }
