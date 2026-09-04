@@ -12,7 +12,11 @@ touched, not part of the current architecture.
 frontend (React + Vite, TS)  --HTTP/JSON + JWT-->  backend (Spring Boot)  -->  PostgreSQL
 ```
 
-* The frontend holds no business logic — it calls the REST API and renders the response.
+* The frontend holds close to no business logic — it mostly calls the REST API and
+  renders the response. The one real exception is regular-vs-retake session
+  classification (`frontend/src/utils/grades.ts: classifySessionTypes`): there is no
+  session-type field in the database, so the frontend infers it from grade ordering. See
+  [`../student/student.md`](../student/student.md) for what that means for a student.
 * The backend is the single source of truth: validation, authorization, data access.
 * No separate API gateway / microservices — a monolithic Spring Boot application.
 
@@ -20,13 +24,13 @@ frontend (React + Vite, TS)  --HTTP/JSON + JWT-->  backend (Spring Boot)  -->  P
 
 | Package | Responsibility |
 |---|---|
-| `web/` | REST controllers — `AuthController`, `AdminController`, `TeacherController`, `StudentController`. Thin layer: accept DTOs, call service/repository, return DTOs. |
-| `web/dto/` | Request/response DTOs (e.g. `CreateUserRequest`, `GradeResponse`, `LoginResponse`). The backend never serializes entities directly to clients. |
-| `domain/` | JPA entities — `User`, `Grade`, `Role` (enum: ADMIN/TEACHER/STUDENT). |
-| `repository/` | Spring Data JPA repositories — `UserRepository`, `GradeRepository`. |
+| `web/` | REST controllers — `AuthController`, `AdminController` (users + student registrar profiles), `TeacherController` (grades), `StudentController` (own grades + own profile), `CalendarController` (events, read by every role, written by ADMIN/TEACHER). Thin layer: accept DTOs, call service/repository, return DTOs. |
+| `web/dto/` | Request/response DTOs (e.g. `CreateUserRequest`, `GradeResponse`, `LoginResponse`, `StudentProfileResponse`/`UpsertStudentProfileRequest`, `CalendarEventResponse`/`CreateCalendarEventRequest`). The backend never serializes entities directly to clients. |
+| `domain/` | JPA entities — `User`, `Grade`, `StudentProfile` (registrar info, one-to-one with `User`), `CalendarEvent`, `Role` (enum: ADMIN/TEACHER/STUDENT), `CalendarEventType` (enum: TEST/HOLIDAY/EVENT). |
+| `repository/` | Spring Data JPA repositories — `UserRepository`, `GradeRepository`, `StudentProfileRepository`, `CalendarEventRepository`. |
 | `service/` | Business/validation logic outside the controllers — `UserValidationService` (username/email rules, see [`decisions.md`](decisions.md)). |
 | `security/` | JWT — `JwtService` (issues/validates tokens), `JwtAuthenticationFilter` (reads `Authorization: Bearer`), `AppUserDetailsService` + `AppUserPrincipal` (Spring Security user model). |
-| `config/` | `SecurityConfig` (filter chain, roles per endpoint), `DataSeeder` (admin account on startup), `DemoDataSeeder` (demo teachers/students/grades when `SEED_DEMO_DATA=true`). |
+| `config/` | `SecurityConfig` (filter chain, roles per endpoint), `DataSeeder` (admin account on startup), `DemoDataSeeder` (demo teachers/students/grades/calendar events/student profiles when `SEED_DEMO_DATA=true`). |
 | `exception/` | `ApiExceptionHandler` (`@ControllerAdvice`) + `ApiError` — a single error format across all endpoints. |
 
 ### Authentication / authorization
@@ -48,19 +52,26 @@ never manual ALTERs in production.
 
 | Folder | Responsibility |
 |---|---|
-| `api/` | HTTP client to the backend (fetch/axios wrapper), attaches the JWT to requests. |
-| `auth/` | Login state, token storage, context for the current user/role. |
-| `routes/` | React Router config, route guards per role (admin/teacher/student). |
-| `pages/` | Pages per role (admin panel, teacher grade entry, student view). |
+| `api/` | `client.ts` — axios wrapper, attaches the JWT to requests, normalizes error messages. `resourceCache.ts` — a small session-scoped cache for GETs shared across pages (e.g. the student's grades, read by Начало/Дневник/Статистики): entries go stale after a TTL and revalidate in the background, on the next mount and on window focus, without dropping what's already showing — including across a failed revalidation. Cleared on login/logout. |
+| `auth/` | Login state, token storage, context for the current user/role (`AuthContext.tsx` for the provider, `useAuth.ts` for the hook — split so editing the provider doesn't disable Fast Refresh). |
+| `routes/` | React Router config, `ProtectedRoute` (per-role guard), `Layout` (shared chrome — top nav, adapts which items show by role). |
+| `pages/` | Pages per role (admin panel, teacher grade entry, student dashboard/journal/statistics/profile/calendar). |
 | `components/` | Reusable UI components. |
-| `hooks/` | Custom React hooks. |
+| `hooks/` | Custom React hooks — mostly thin wrappers over `useApiResource` (the shared `useSyncExternalStore`-based data-fetching hook) bound to a specific endpoint and, where relevant, one of the caches in `api/resourceCache.ts`. |
+| `utils/` | Pure helper functions with no React/HTTP dependency (e.g. `grades.ts` — averaging, regular/retake classification; `calendar.ts` — month-grid building). Where the actual business logic lives, and the only part of the frontend with unit tests (`grades.test.ts`). |
 | `types/` | Shared TypeScript types (mirroring the backend DTOs). |
 
 ## Roles and access
 
-* **Admin** (`admin`, fixed username) — creates teacher/student accounts.
-* **Teacher** (email, must end in `@uni-sofia.bg`) — enters grades for students by email.
-* **Student** (any email) — sees only their own grades.
+* **Admin** (`admin`, fixed username) — creates teacher/student accounts and manages
+  students' registrar profiles (faculty number, group, enrolled/completed semester,
+  etc. — `AdminController`, `StudentProfile`). Also has calendar write access.
+* **Teacher** (email, must end in `@uni-sofia.bg`) — enters grades for students by email;
+  can also create/delete calendar events (tests, holidays, other events).
+* **Student** (any email) — sees only their own grades (`GET /api/student/grades`, never
+  another student's) across a dashboard, journal and statistics view; sees their own
+  registrar profile read-only; sees the shared calendar read-only. Full behavior:
+  [`../student/student.md`](../student/student.md).
 
 Full username/password rules: [`decisions.md`](decisions.md).
 

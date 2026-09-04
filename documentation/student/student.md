@@ -22,6 +22,19 @@ render "under construction" for any non-STUDENT role, and — since both routes 
 student-only in practice — the nav only offers those two items to STUDENT accounts;
 other roles see just Начало and Календар.
 
+## Data freshness
+
+Grades and profile data (used by Начало, Дневник, Статистики, and Профил) are read
+through a shared client-side cache (`api/resourceCache.ts`) rather than refetched on
+every navigation between those pages. A cache entry is treated as stale after 30 seconds
+and silently revalidated in the background — on the next page mount that reads it, and
+whenever the browser tab regains focus — without ever blanking out what's already on
+screen, including if the revalidation itself fails (a transient network error never
+replaces good data with an error message). In practice: a grade a teacher enters while
+the student is mid-session shows up within 30 seconds, or immediately on refocusing the
+tab, without a manual reload. The calendar is not cached this way — it always refetches
+on mount, since `CalendarPage` also writes to it.
+
 ## Dashboard (`/student`, `StudentDashboard.tsx`)
 
 Landing page after login. Pulls all of the student's grades
@@ -75,9 +88,13 @@ table (`StudentProfile` entity) — admin-managed, not editable by the student:
 
 ОКС (degree level), факултетен номер, факултет, специалност, вид обучение,
 специализация, група, вид прием, състояние, записан семестър, заверен семестър, поток,
-plus the student's email/username. Any field the admin hasn't filled in shows as `—`. If
-no `StudentProfile` row exists yet for the student, the endpoint returns an all-empty
-response rather than an error.
+plus the student's email/username. Any field the admin hasn't filled in — `null` or an
+empty string — shows as `—`. If no `StudentProfile` row exists yet for the student, the
+endpoint returns an all-empty response rather than an error. When an admin edits these
+fields (`PUT /api/admin/students/profile`), enrolled/completed semester are validated to
+1–8/0–8 and every text field to the same length its database column allows
+(`UpsertStudentProfileRequest`), so a typo like "999" or an over-long faculty number is
+rejected with a 400 rather than silently truncated or shown to the student as-is.
 
 ## Calendar (`/calendar`, `CalendarPage.tsx`)
 
