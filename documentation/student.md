@@ -112,14 +112,6 @@ Each event is one of three types (`CalendarEventType`): **TEST** (tied to a subj
 **HOLIDAY**, or **EVENT** — single-day or a date range, each with a title, optional
 description, and the name of who created it.
 
-## What a student cannot do (no backend support at all)
-
-No entities or endpoints exist for any of the following, so these aren't just missing UI —
-there's nothing to build on top of yet: weekly class timetable, absences/attendance,
-homework/assignments, announcements, per-grade teacher comments, messaging a teacher, or
-downloadable report cards/PDF export. Grade filtering/search and student self-service
-password change are also not implemented.
-
 ## Data model touching the student role
 
 * **`User`** — `username` (email), `password` (hashed), `role`. No separate "name" field
