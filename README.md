@@ -75,6 +75,24 @@ npm run dev
 
 Expects the backend on `http://localhost:8080` by default (see `frontend/.env`).
 
+## Deployment
+
+Live at [markly-frontend.onrender.com](https://markly-frontend.onrender.com) (backend at
+`markly-backend-w80o.onrender.com`), deployed on [Render](https://render.com) via the
+[render.yaml](render.yaml) blueprint: the backend runs from [backend/Dockerfile](backend/Dockerfile)
+as a Docker web service, the frontend as a static site, against the same Neon Postgres
+instance used for local development.
+
+Both services are on Render's free plan, which spins down after inactivity — the first
+request afterwards can take up to ~2 minutes while the backend cold-starts (JVM boot +
+Neon connection).
+
+`FRONTEND_ORIGIN` (backend) and `VITE_API_BASE_URL` (frontend) must point at each other's
+actual `*.onrender.com` URLs — Render appends a random suffix to a service's URL when its
+plain name is taken, so these can't be hardcoded in the blueprint and are set manually per
+service in the Render dashboard's Environment tab. `VITE_API_BASE_URL` is baked in at
+frontend build time, so changing it requires a redeploy, not just a restart.
+
 ## Tests
 
 ```
