@@ -1,5 +1,8 @@
 # Markly
 
+**Live version: [markly-frontend.onrender.com](https://markly-frontend.onrender.com)**
+(free-plan cold start — first load can take up to ~2 minutes, see [Deployment](#deployment))
+
 School system: Spring Boot REST backend + PostgreSQL + React frontend. Roles Admin /
 Teacher / Student — admin creates users and manages student registrar profiles, teacher
 enters grades and manages the calendar, student views their own grades/journal/statistics
