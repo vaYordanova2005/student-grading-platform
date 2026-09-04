@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { HomeIcon, JournalIcon, ChartIcon, CalendarIcon, ProfileIcon } from '../components/icons';
-import { NetworkField } from '../components/NetworkField';
 
 export function Layout({ title, children }: { title?: string; children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -24,15 +23,6 @@ export function Layout({ title, children }: { title?: string; children: ReactNod
 
   return (
     <div className="page">
-      <NetworkField
-        className="home-network-bg"
-        intensity={1.9}
-        minNodes={90}
-        maxNodes={220}
-        areaPerNode={3200}
-        linkDist={85}
-        maxPulses={40}
-      />
       <header className="topbar">
         <Link to="/" className="brand">Markly</Link>
         <nav className="topnav">

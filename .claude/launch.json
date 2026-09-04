@@ -10,8 +10,8 @@
     },
     {
       "name": "backend",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": ["backend/run-dev.sh"],
+      "runtimeExecutable": "C:\\Program Files\\Git\\usr\\bin\\bash.exe",
+      "runtimeArgs": ["-c", "cd backend && set -a && source .env && set +a && ./mvnw.cmd spring-boot:run"],
       "port": 8080
     }
   ]

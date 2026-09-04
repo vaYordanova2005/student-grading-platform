@@ -20,3 +20,18 @@ export interface GradeSummary {
   createdAt: string;
   teacherUsername: string | null;
 }
+
+export type CalendarEventType = 'TEST' | 'HOLIDAY' | 'EVENT';
+
+export interface CalendarEventSummary {
+  id: number;
+  type: CalendarEventType;
+  title: string;
+  description: string | null;
+  subject: string | null;
+  startDate: string;
+  endDate: string | null;
+  createdByUsername: string;
+  createdByRole: Role;
+  createdAt: string;
+}

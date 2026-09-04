@@ -6,9 +6,9 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { TeacherDashboard } from './pages/TeacherDashboard';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { ProfilePage } from './pages/ProfilePage';
-import { ComingSoonPage } from './pages/ComingSoonPage';
 import { JournalPage } from './pages/JournalPage';
 import { StatisticsPage } from './pages/StatisticsPage';
+import { CalendarPage } from './pages/CalendarPage';
 
 function HomeRedirect() {
   const { user } = useAuth();
@@ -72,7 +72,7 @@ function AppRoutes() {
         path="/calendar"
         element={
           <ProtectedRoute>
-            <ComingSoonPage title="Календар" />
+            <CalendarPage />
           </ProtectedRoute>
         }
       />

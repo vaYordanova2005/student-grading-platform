@@ -1,8 +1,11 @@
 package com.markly.backend.config;
 
+import com.markly.backend.domain.CalendarEvent;
+import com.markly.backend.domain.CalendarEventType;
 import com.markly.backend.domain.Grade;
 import com.markly.backend.domain.Role;
 import com.markly.backend.domain.User;
+import com.markly.backend.repository.CalendarEventRepository;
 import com.markly.backend.repository.GradeRepository;
 import com.markly.backend.repository.UserRepository;
 import org.slf4j.Logger;
@@ -13,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
 
@@ -56,16 +60,19 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final GradeRepository gradeRepository;
+    private final CalendarEventRepository calendarEventRepository;
     private final PasswordEncoder passwordEncoder;
     private final boolean enabled;
 
     public DemoDataSeeder(
             UserRepository userRepository,
             GradeRepository gradeRepository,
+            CalendarEventRepository calendarEventRepository,
             PasswordEncoder passwordEncoder,
             @Value("${app.seed-demo-data.enabled:false}") boolean enabled) {
         this.userRepository = userRepository;
         this.gradeRepository = gradeRepository;
+        this.calendarEventRepository = calendarEventRepository;
         this.passwordEncoder = passwordEncoder;
         this.enabled = enabled;
     }
@@ -101,11 +108,49 @@ public class DemoDataSeeder implements CommandLineRunner {
             }
         }
 
+        seedCalendarEvents(teachers.get(0));
+
         log.info("Seeded demo data: {} teachers ({}..{}@uni-sofia.bg), {} students (student1..{}@uni-sofia.bg), "
                         + "{} grades across {} subjects. Demo credentials are documented in README.",
                 TEACHER_COUNT, TEACHER_HANDLES.get(0), TEACHER_HANDLES.get(TEACHER_HANDLES.size() - 1),
                 STUDENT_COUNT, STUDENT_COUNT,
                 gradeCount, SUBJECTS.size());
+    }
+
+    /**
+     * A handful of upcoming tests (one per subject), plus a holiday and a
+     * job-fair event, so the calendar isn't empty on a fresh demo database.
+     * Attributed to the first demo teacher — which role actually "created"
+     * seed data doesn't matter here.
+     */
+    private void seedCalendarEvents(User creator) {
+        LocalDate today = LocalDate.now();
+        for (int s = 0; s < SUBJECTS.size(); s++) {
+            calendarEventRepository.save(new CalendarEvent(
+                    CalendarEventType.TEST,
+                    "Тест по " + SUBJECTS.get(s),
+                    null,
+                    SUBJECTS.get(s),
+                    today.plusDays(7 + s * 3L),
+                    null,
+                    creator));
+        }
+        calendarEventRepository.save(new CalendarEvent(
+                CalendarEventType.EVENT,
+                "Кариерен ден — фирмени представяния",
+                "Компании от бранша представят стажантски и junior позиции.",
+                null,
+                today.plusDays(14),
+                null,
+                creator));
+        calendarEventRepository.save(new CalendarEvent(
+                CalendarEventType.HOLIDAY,
+                "Зимна ваканция",
+                null,
+                null,
+                today.plusDays(30),
+                today.plusDays(37),
+                creator));
     }
 
     private int weightedGrade(Random random) {
