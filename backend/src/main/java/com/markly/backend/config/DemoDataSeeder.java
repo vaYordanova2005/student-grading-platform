@@ -57,6 +57,19 @@ public class DemoDataSeeder implements CommandLineRunner {
     /** A retake is scheduled even without a failing grade this often (percent). */
     private static final int EXTRA_RETAKE_PERCENT = 8;
 
+    /** How many days before the session end a retake is recorded. */
+    private static final int RETAKE_LEAD_DAYS = 5;
+    /**
+     * How many days before the session end the <em>last</em> regular-session
+     * grade in a semester (k = SUBJECTS_PER_SEMESTER - 1) is recorded; earlier
+     * ones (smaller k) get more days still. Derived from
+     * {@link #RETAKE_LEAD_DAYS} and {@link #SUBJECTS_PER_SEMESTER} rather than
+     * a second independent literal, so growing SUBJECTS_PER_SEMESTER can never
+     * silently push a regular-session offset past RETAKE_LEAD_DAYS and make a
+     * retake sort before the grade it's retaking — see {@code saveGrade}.
+     */
+    private static final int REGULAR_LEAD_DAYS_BASE = RETAKE_LEAD_DAYS + SUBJECTS_PER_SEMESTER;
+
     private static final List<String> SUBJECTS = List.of(
             "Математически анализ",
             "Линейна алгебра",
@@ -132,14 +145,15 @@ public class DemoDataSeeder implements CommandLineRunner {
                     User teacher = teachers.get(subjectIndex % teachers.size());
 
                     int grade = weightedGrade(random);
-                    saveGrade(student, teacher, subject, enrolledSemester, semester, grade, 30 - k);
+                    saveGrade(student, teacher, subject, enrolledSemester, semester, grade, REGULAR_LEAD_DAYS_BASE - k);
                     gradeCount++;
 
                     // A failing grade is always retaken; a few passing ones are
                     // retaken too, so the "редовна срещу поправителна" split has
                     // something to compare.
                     if (grade == FAIL_GRADE || random.nextInt(100) < EXTRA_RETAKE_PERCENT) {
-                        saveGrade(student, teacher, subject, enrolledSemester, semester, 3 + random.nextInt(4), 5);
+                        saveGrade(student, teacher, subject, enrolledSemester, semester,
+                                retakeGrade(random), RETAKE_LEAD_DAYS);
                         gradeCount++;
                     }
                 }
@@ -248,5 +262,18 @@ public class DemoDataSeeder implements CommandLineRunner {
         if (roll < 45) return 4;
         if (roll < 75) return 5;
         return 6;
+    }
+
+    /**
+     * A retake usually recovers to a pass, but {@code 3 + random.nextInt(4)}
+     * (range 3..6) never can — the demo data had no student failing the same
+     * exam twice. This keeps the bias toward passing but leaves the door open.
+     */
+    private int retakeGrade(Random random) {
+        int roll = random.nextInt(100);
+        if (roll < 10) return FAIL_GRADE;
+        if (roll < 35) return 3;
+        if (roll < 70) return 4;
+        return 5 + random.nextInt(2);
     }
 }
