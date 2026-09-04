@@ -3,9 +3,14 @@ package com.markly.backend.repository;
 import com.markly.backend.domain.Grade;
 import com.markly.backend.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 public interface GradeRepository extends JpaRepository<Grade, Long> {
-    List<Grade> findByStudentOrderBySemesterAscSubjectAsc(User student);
+
+    @Query("select g from Grade g left join fetch g.teacher where g.student = :student "
+            + "order by g.semester asc, g.subject asc")
+    List<Grade> findByStudentOrderBySemesterAscSubjectAsc(@Param("student") User student);
 }

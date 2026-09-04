@@ -2,23 +2,8 @@ import { useMemo, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../routes/Layout';
 import { ChartIcon, JournalIcon, TrophyIcon, BooksIcon } from '../components/icons';
-import { NetworkField } from '../components/NetworkField';
 import { useStudentGrades } from '../hooks/useStudentGrades';
-
-// Thresholds for the 2-6 Bulgarian grading scale.
-const EXCELLENT_THRESHOLD = 5.5; // average tier color cutoff
-const GOOD_THRESHOLD = 4.5;
-const TOP_GRADE = 6; // individual grade counted as "excellent"
-
-function tierColor(avg: number): string {
-  if (avg >= EXCELLENT_THRESHOLD) return 'var(--success)';
-  if (avg >= GOOD_THRESHOLD) return 'var(--primary)';
-  return 'var(--error)';
-}
-
-function average(values: number[]): number {
-  return values.reduce((sum, v) => sum + v, 0) / values.length;
-}
+import { average, semesterAverages, subjectAverages, tierColor, TOP_GRADE } from '../utils/grades';
 
 export function StudentDashboard() {
   const { grades, error, loading } = useStudentGrades();
@@ -29,36 +14,17 @@ export function StudentDashboard() {
     const excellentCount = grades.filter((g) => g.grade >= TOP_GRADE).length;
     const subjects = new Set(grades.map((g) => g.subject));
 
-    const bySubject = new Map<string, number[]>();
-    for (const g of grades) {
-      bySubject.set(g.subject, [...(bySubject.get(g.subject) ?? []), g.grade]);
-    }
-    const subjectAverages = [...bySubject.entries()]
-      .map(([subject, values]) => ({ subject, avg: average(values), count: values.length }))
-      .sort((a, b) => b.avg - a.avg);
-
-    const bySemester = new Map<number, number[]>();
-    for (const g of grades) {
-      bySemester.set(g.semester, [...(bySemester.get(g.semester) ?? []), g.grade]);
-    }
-    const semesterAverages = [...bySemester.entries()]
-      .map(([semester, values]) => ({ semester, avg: average(values) }))
-      .sort((a, b) => a.semester - b.semester);
-
-    return { overallAvg, excellentCount, subjectCount: subjects.size, subjectAverages, semesterAverages };
+    return {
+      overallAvg,
+      excellentCount,
+      subjectCount: subjects.size,
+      subjectAverages: subjectAverages(grades),
+      semesterAverages: semesterAverages(grades),
+    };
   }, [grades]);
 
   return (
     <Layout>
-      <NetworkField
-        className="home-network-bg"
-        intensity={1.9}
-        minNodes={90}
-        maxNodes={220}
-        areaPerNode={3200}
-        linkDist={85}
-        maxPulses={40}
-      />
       {loading && (
         <section className="card">
           <p>Зареждане...</p>
@@ -121,7 +87,7 @@ export function StudentDashboard() {
                   <div className="bar-track">
                     <div
                       className="bar-fill"
-                      style={{ width: `${(avg / 6) * 100}%`, background: tierColor(avg) }}
+                      style={{ width: `${(avg / TOP_GRADE) * 100}%`, background: tierColor(avg) }}
                     />
                   </div>
                   <span className="subject-bar-value">

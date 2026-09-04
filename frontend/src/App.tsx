@@ -1,13 +1,15 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider, useAuth } from './auth/AuthContext';
+import { AuthProvider } from './auth/AuthContext';
+import { useAuth } from './auth/useAuth';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { TeacherDashboard } from './pages/TeacherDashboard';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { ProfilePage } from './pages/ProfilePage';
-import { ComingSoonPage } from './pages/ComingSoonPage';
 import { JournalPage } from './pages/JournalPage';
+import { StatisticsPage } from './pages/StatisticsPage';
+import { CalendarPage } from './pages/CalendarPage';
 
 function HomeRedirect() {
   const { user } = useAuth();
@@ -63,7 +65,7 @@ function AppRoutes() {
         path="/statistics"
         element={
           <ProtectedRoute>
-            <ComingSoonPage title="Статистики" />
+            <StatisticsPage />
           </ProtectedRoute>
         }
       />
@@ -71,7 +73,7 @@ function AppRoutes() {
         path="/calendar"
         element={
           <ProtectedRoute>
-            <ComingSoonPage title="Календар" />
+            <CalendarPage />
           </ProtectedRoute>
         }
       />

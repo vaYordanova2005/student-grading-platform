@@ -1,7 +1,9 @@
 # Markly
 
 School system: Spring Boot REST backend + PostgreSQL + React frontend. Roles Admin /
-Teacher / Student — admin creates users, teacher enters grades, student views their own.
+Teacher / Student — admin creates users and manages student registrar profiles, teacher
+enters grades and manages the calendar, student views their own grades/journal/statistics
+and a read-only profile/calendar.
 
 The original TCP socket version of the project is kept in [legacy/](legacy/) as a
 reference only and is no longer maintained.
@@ -47,13 +49,14 @@ Configurable env vars: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSW
 #### Demo data (optional)
 
 With `SEED_DEMO_DATA=true`, the first startup against an empty database creates 8
-teachers, 20 students, and sample grades, so there's something to look at on the
-dashboards. Disabled by default — only enable it on a local/test database, never against
-a live production database. Demo credentials (valid under the same rules as manually
-created accounts):
+teachers, 20 students (each with a registrar profile and grades across every semester up
+to and including the one they're currently enrolled in), and a handful of calendar
+events, so there's something to look at on every page. Disabled by default — only enable
+it on a local/test database, never against a live production database. Demo credentials
+(valid under the same rules as manually created accounts):
 
-* Teachers: `teachera@uni-sofia.bg` … `teacherh@uni-sofia.bg`, password `password12345`
-* Students: `student1@test.com` … `student20@test.com`, password `password12345`
+* Teachers: `teacher1@uni-sofia.bg` … `teacher8@uni-sofia.bg`, password `password12345`
+* Students: `student1@uni-sofia.bg` … `student20@uni-sofia.bg`, password `password12345`
 
 For a remote database (e.g. [Neon](https://neon.tech)), set `DB_HOST` to the host from
 the connection string and `DB_SSLMODE=require`:
@@ -72,9 +75,19 @@ npm run dev
 
 Expects the backend on `http://localhost:8080` by default (see `frontend/.env`).
 
+## Tests
+
+```
+cd backend && ./mvnw test
+cd frontend && npm test    # vitest; npm run lint and npm run build also gate CI-worthy changes
+```
+
 ## Roles
 
 * **Admin** → creates teacher/student accounts (teacher username: `@uni-sofia.bg` email;
-  student: any email, password at least 5 characters)
-* **Teacher** → enters student grades by email
-* **Student** → views their own grades
+  student: any email, password at least 5 characters) and manages student registrar
+  profiles (faculty number, group, semester, etc.)
+* **Teacher** → enters student grades by email; creates/deletes calendar events
+* **Student** → views their own grades (dashboard, journal, statistics), and a read-only
+  registrar profile and calendar — see [documentation/student/](documentation/student/)
+  for the full picture

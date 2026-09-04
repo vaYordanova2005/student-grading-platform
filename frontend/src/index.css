@@ -10,6 +10,8 @@
   --primary-contrast: #ffffff;
   --error: #d64545;
   --success: #2f9e56;
+  --cal-holiday: #2f6fed;
+  --cal-event: #9b3fe0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,6 +25,8 @@
     --primary-contrast: #0e1f17;
     --error: #f0837e;
     --success: #6fd897;
+    --cal-holiday: #6ea8ff;
+    --cal-event: #d59bff;
   }
 }
 
@@ -71,6 +75,17 @@ body {
   gap: 1rem;
   margin-left: auto;
   white-space: nowrap;
+}
+
+.topbar-username {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.topbar-username:hover {
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 .topnav {
@@ -128,6 +143,81 @@ main {
 
 .card h2 {
   margin-top: 0;
+}
+
+details.card {
+  padding: 0;
+  overflow: hidden;
+}
+
+details.card summary {
+  cursor: pointer;
+  padding: 1rem 1.5rem;
+  font-weight: 700;
+  list-style: none;
+}
+
+details.card summary::-webkit-details-marker {
+  display: none;
+}
+
+details.card summary::before {
+  content: '\25B8';
+  display: inline-block;
+  margin-right: 0.6rem;
+  transition: transform 0.15s ease;
+}
+
+details.card[open] summary::before {
+  transform: rotate(90deg);
+}
+
+details.card table {
+  margin: 0 1.5rem 1.5rem;
+  width: calc(100% - 3rem);
+}
+
+details.card p {
+  margin: 0 1.5rem 1.5rem;
+  opacity: 0.75;
+}
+
+.grade-btn {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-weight: 700;
+}
+
+.grade-btn:hover {
+  background: var(--border);
+}
+
+.grade-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.grade-btn-fail {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.grade-detail-row td {
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+}
+
+.grade-detail {
+  padding: 0.6rem 0.75rem;
+  background: var(--bg);
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 form label {
@@ -331,4 +421,377 @@ a.stat-tile:hover {
 .semester-pill-value {
   font-size: 1.1rem;
   font-weight: 700;
+}
+
+.trend-chart-wrap {
+  overflow-x: auto;
+}
+
+.trend-chart {
+  width: 100%;
+  min-width: 480px;
+  height: auto;
+}
+
+.trend-grid-line {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.trend-axis-label {
+  fill: var(--text);
+  opacity: 0.6;
+  font-size: 10px;
+}
+
+.trend-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+
+.trend-point {
+  stroke: var(--card-bg);
+  stroke-width: 2;
+}
+
+.subject-matrix-wrap {
+  overflow-x: auto;
+}
+
+.subject-matrix {
+  min-width: 420px;
+}
+
+.subject-matrix th,
+.subject-matrix td {
+  text-align: center;
+}
+
+.subject-matrix th:first-child,
+.subject-matrix td:first-child {
+  text-align: left;
+}
+
+.delta-up {
+  color: var(--success);
+}
+
+.delta-down {
+  color: var(--error);
+}
+
+.delta-flat {
+  opacity: 0.75;
+}
+
+.retake-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.retake-tile {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.retake-tile strong {
+  font-size: 1.5rem;
+}
+
+.retake-tile span {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-header h2 {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.calendar-today-btn {
+  margin-left: 0.5rem;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.6;
+  text-transform: uppercase;
+  padding: 0.25rem 0;
+}
+
+.calendar-day {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem;
+  min-height: 3.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  color: var(--text);
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.calendar-day:hover {
+  background: var(--border);
+}
+
+.calendar-day-number {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.calendar-day-outside {
+  opacity: 0.4;
+}
+
+.calendar-day-today {
+  border-color: var(--primary);
+  border-width: 2px;
+}
+
+.calendar-day-selected {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+
+.calendar-day-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.calendar-pill {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 0 5px 1px currentColor;
+}
+
+.calendar-pill-test {
+  background: var(--primary);
+  color: var(--primary);
+}
+
+.calendar-pill-holiday {
+  background: var(--cal-holiday);
+  color: var(--cal-holiday);
+}
+
+.calendar-pill-event {
+  background: var(--cal-event);
+  color: var(--cal-event);
+}
+
+.calendar-pill-more {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.calendar-event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.calendar-event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.calendar-event-item .calendar-pill {
+  width: 13px;
+  height: 13px;
+  margin-top: 0.4rem;
+}
+
+.calendar-event-item > div {
+  flex: 1;
+}
+
+.calendar-event-type {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.calendar-event-desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.calendar-event-author {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.calendar-delete-btn {
+  background: transparent;
+  color: var(--error);
+  border: 1px solid var(--error);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.calendar-delete-btn:not(:disabled):hover {
+  background: var(--error);
+  color: white;
+}
+
+.calendar-month-year {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.calendar-my-label {
+  background: transparent;
+  color: var(--text);
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  height: auto;
+  text-transform: capitalize;
+}
+
+.calendar-my-label:hover {
+  background: var(--bg);
+}
+
+.calendar-picker {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  z-index: 10;
+  min-width: 220px;
+}
+
+.calendar-picker-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.calendar-picker-nav button {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.calendar-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.calendar-picker-cell {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.calendar-picker-cell:hover {
+  background: var(--border);
+}
+
+.calendar-picker-cell-active {
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border-color: var(--primary);
+}
+
+.profile-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 0.6rem 1.5rem;
+}
+
+.profile-info-row {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-info-label {
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.profile-info-value {
+  word-break: break-word;
+}
+
+.profile-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: end;
+}
+
+.profile-edit-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.profile-edit-grid button {
+  align-self: start;
 }

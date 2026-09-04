@@ -1,19 +1,27 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
-import { HomeIcon, JournalIcon, ChartIcon, CalendarIcon, ProfileIcon } from '../components/icons';
+import { useAuth } from '../auth/useAuth';
+import { HomeIcon, JournalIcon, ChartIcon, CalendarIcon } from '../components/icons';
+import { NetworkField } from '../components/NetworkField';
 
 export function Layout({ title, children }: { title?: string; children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const homePath = user ? `/${user.role.toLowerCase()}` : '/';
+  // Дневник and Статистики only ever show a student's own grades; for a
+  // teacher or an admin they answer "в процес на разработка", so they are not
+  // offered in the navigation of those roles.
+  const isStudent = user?.role === 'STUDENT';
   const navItems = [
     { to: homePath, label: 'Начало', icon: HomeIcon, end: true },
-    { to: '/journal', label: 'Дневник', icon: JournalIcon },
-    { to: '/statistics', label: 'Статистики', icon: ChartIcon },
-    { to: '/calendar', label: 'Календар', icon: CalendarIcon },
-    { to: '/profile', label: 'Профил', icon: ProfileIcon },
+    ...(isStudent
+      ? [
+          { to: '/journal', label: 'Дневник', icon: JournalIcon, end: false },
+          { to: '/statistics', label: 'Статистики', icon: ChartIcon, end: false },
+        ]
+      : []),
+    { to: '/calendar', label: 'Календар', icon: CalendarIcon, end: false },
   ];
 
   const handleLogout = () => {
@@ -23,6 +31,15 @@ export function Layout({ title, children }: { title?: string; children: ReactNod
 
   return (
     <div className="page">
+      <NetworkField
+        className="home-network-bg"
+        intensity={1.9}
+        minNodes={90}
+        maxNodes={220}
+        areaPerNode={3200}
+        linkDist={85}
+        maxPulses={40}
+      />
       <header className="topbar">
         <Link to="/" className="brand">Markly</Link>
         <nav className="topnav">
@@ -39,9 +56,9 @@ export function Layout({ title, children }: { title?: string; children: ReactNod
           ))}
         </nav>
         <div className="topbar-user">
-          <span>
-            {user?.username} ({user?.role})
-          </span>
+          <Link to="/profile" className="topbar-username">
+            {user?.username}
+          </Link>
           <button onClick={handleLogout}>Изход</button>
         </div>
       </header>

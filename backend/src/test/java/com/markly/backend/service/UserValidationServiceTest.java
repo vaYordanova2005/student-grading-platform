@@ -16,6 +16,11 @@ class UserValidationServiceTest {
     }
 
     @Test
+    void acceptsTeacherWithTrailingDigits() {
+        assertDoesNotThrow(() -> service.validate(Role.TEACHER, "teacher1@uni-sofia.bg", "secret"));
+    }
+
+    @Test
     void rejectsTeacherWithBadEmailDomain() {
         assertThrows(IllegalArgumentException.class,
                 () -> service.validate(Role.TEACHER, "ivanov@gmail.com", "secret"));

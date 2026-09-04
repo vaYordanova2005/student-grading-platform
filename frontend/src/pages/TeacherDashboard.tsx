@@ -50,7 +50,7 @@ export function TeacherDashboard() {
             <input
               type="number"
               min={1}
-              max={2}
+              max={8}
               value={semester}
               onChange={(e) => setSemester(Number(e.target.value))}
               required
