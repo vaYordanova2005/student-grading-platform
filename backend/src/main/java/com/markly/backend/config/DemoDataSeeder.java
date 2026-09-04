@@ -18,7 +18,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Random;
 
@@ -42,6 +44,18 @@ public class DemoDataSeeder implements CommandLineRunner {
     private static final int TEACHER_COUNT = 8;
     private static final int STUDENT_COUNT = 20;
     private static final long RANDOM_SEED = 42L;
+
+    /** How many subjects a student is examined in per semester. */
+    private static final int SUBJECTS_PER_SEMESTER = 4;
+    /**
+     * Shifts the window of subjects by this much every semester, so a subject
+     * reappears in several semesters (the per-subject trend needs more than
+     * one measurement) without every semester having the same subject list.
+     */
+    private static final int SUBJECT_WINDOW_STRIDE = 3;
+    private static final int FAIL_GRADE = 2;
+    /** A retake is scheduled even without a failing grade this often (percent). */
+    private static final int EXTRA_RETAKE_PERCENT = 8;
 
     private static final List<String> SUBJECTS = List.of(
             "Математически анализ",
@@ -105,17 +119,29 @@ public class DemoDataSeeder implements CommandLineRunner {
             User student = userRepository.save(
                     new User(username, passwordEncoder.encode(DEMO_STUDENT_PASSWORD), Role.STUDENT));
             int enrolledSemester = 1 + random.nextInt(8);
-            int completedSemesters = Math.max(1, enrolledSemester - 1);
             studentProfileRepository.save(seedStudentProfile(student, i, enrolledSemester));
 
-            for (int s = 0; s < SUBJECTS.size(); s++) {
-                String subject = SUBJECTS.get(s);
-                User teacher = teachers.get(s % teachers.size());
-                int gradesForSubject = 2 + random.nextInt(2);
-                for (int g = 0; g < gradesForSubject; g++) {
-                    int semester = 1 + (g % completedSemesters);
-                    gradeRepository.save(new Grade(student, teacher, subject, semester, weightedGrade(random)));
+            // Every semester the student has reached gets grades, including the
+            // one they are enrolled in right now: the journal, the semester
+            // trend and the "(текущ)" marker all read straight off this data,
+            // so a gap here shows up as an empty semester in the UI.
+            for (int semester = 1; semester <= enrolledSemester; semester++) {
+                for (int k = 0; k < SUBJECTS_PER_SEMESTER; k++) {
+                    int subjectIndex = ((semester - 1) * SUBJECT_WINDOW_STRIDE + k) % SUBJECTS.size();
+                    String subject = SUBJECTS.get(subjectIndex);
+                    User teacher = teachers.get(subjectIndex % teachers.size());
+
+                    int grade = weightedGrade(random);
+                    saveGrade(student, teacher, subject, enrolledSemester, semester, grade, 30 - k);
                     gradeCount++;
+
+                    // A failing grade is always retaken; a few passing ones are
+                    // retaken too, so the "редовна срещу поправителна" split has
+                    // something to compare.
+                    if (grade == FAIL_GRADE || random.nextInt(100) < EXTRA_RETAKE_PERCENT) {
+                        saveGrade(student, teacher, subject, enrolledSemester, semester, 3 + random.nextInt(4), 5);
+                        gradeCount++;
+                    }
                 }
             }
         }
@@ -127,6 +153,35 @@ public class DemoDataSeeder implements CommandLineRunner {
                 TEACHER_COUNT, TEACHER_HANDLES.get(0), TEACHER_HANDLES.get(TEACHER_HANDLES.size() - 1),
                 STUDENT_COUNT, STUDENT_COUNT,
                 gradeCount, SUBJECTS.size());
+    }
+
+    /**
+     * {@code createdAt} is set explicitly instead of being left to
+     * {@code @PrePersist}: the whole seed runs in one batch, so every grade
+     * would otherwise carry the same instant and the frontend could not tell
+     * a regular session from its retake — that classification is based purely
+     * on which of the two was recorded first.
+     *
+     * @param daysBeforeSessionEnd how far before the semester's exam session
+     *                             closes the grade was entered; a retake uses a
+     *                             smaller value than the regular session so it
+     *                             always sorts after it.
+     */
+    private void saveGrade(
+            User student, User teacher, String subject,
+            int enrolledSemester, int semester, int grade, int daysBeforeSessionEnd) {
+        Grade entity = new Grade(student, teacher, subject, semester, grade);
+        entity.setCreatedAt(sessionInstant(enrolledSemester, semester, daysBeforeSessionEnd));
+        gradeRepository.save(entity);
+    }
+
+    /** Semesters are half a year apart; the current one ends today. */
+    private Instant sessionInstant(int enrolledSemester, int semester, int daysBeforeSessionEnd) {
+        return LocalDate.now()
+                .minusMonths(6L * (enrolledSemester - semester))
+                .minusDays(daysBeforeSessionEnd)
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
     }
 
     /**
