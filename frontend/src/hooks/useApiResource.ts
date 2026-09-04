@@ -1,56 +1,45 @@
-import { useCallback, useEffect, useState } from 'react';
-import apiClient, { extractErrorMessage } from '../api/client';
-import type { ResourceCache, ResourceState } from '../api/resourceCache';
-
-const IDLE: ResourceState<never> = { data: null, error: null, loaded: false };
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { createLocalResource, type ResourceCache } from '../api/resourceCache';
 
 export interface ApiResource<T> {
   data: T | null;
   error: string | null;
   loading: boolean;
-  /** Drops what is loaded (and the cache, if any) and fetches again. */
+  /** Forces a refetch now, bypassing the cache's TTL. */
   reload: () => void;
 }
 
 /**
- * One GET, one piece of state. `loading` is derived rather than stored, which
- * keeps the effect free of the synchronous `setState` calls that make React
- * re-render twice on mount.
+ * One GET, read through a {@link ResourceCache} via `useSyncExternalStore` —
+ * so a background revalidation (see resourceCache.ts) that resolves while
+ * this component is mounted re-renders it with the new data, and multiple
+ * components sharing a cache stay in sync with each other.
+ *
+ * A caller that passes no `cache` gets a private, unregistered one created
+ * once per hook instance: same staleness mechanics, but nothing else will
+ * ever read from it, so it doesn't need sharing or focus-revalidation.
  */
 export function useApiResource<T>(path: string, enabled = true, cache?: ResourceCache<T>): ApiResource<T> {
-  const [state, setState] = useState<ResourceState<T>>(() => cache?.snapshot() ?? IDLE);
+  // Lazy useState initializer rather than a ref: reading a ref's value during
+  // render is itself a lint error (react-hooks/refs), since a ref update
+  // doesn't schedule a re-render the way state does.
+  const [localCache] = useState<ResourceCache<T> | null>(() => (cache ? null : createLocalResource<T>()));
+  const activeCache = cache ?? localCache!;
+
+  const snapshot = useSyncExternalStore(activeCache.subscribe, activeCache.getSnapshot);
 
   useEffect(() => {
-    if (!enabled || state.loaded) return;
-
-    // A response that arrives after this effect has been torn down — fast
-    // navigation, a reload, a change of `enabled` — must not overwrite the
-    // state that replaced it, including overwriting fresh data with a stale
-    // error. `ignore` rather than an AbortController: with a shared cache the
-    // request may be one another component is still waiting on, so it is this
-    // subscription that has to be cancelled, not the request.
-    let ignore = false;
-
-    const request = cache
-      ? cache.load(path)
-      : apiClient.get<T>(path).then(
-          (response): ResourceState<T> => ({ data: response.data, error: null, loaded: true }),
-          (err): ResourceState<T> => ({ data: null, error: extractErrorMessage(err), loaded: true })
-        );
-
-    request.then((next) => {
-      if (!ignore) setState(next);
-    });
-
-    return () => {
-      ignore = true;
-    };
-  }, [path, enabled, cache, state.loaded]);
+    if (enabled) activeCache.ensureFresh(path);
+  }, [activeCache, path, enabled]);
 
   const reload = useCallback(() => {
-    cache?.clear();
-    setState(IDLE);
-  }, [cache]);
+    activeCache.refresh(path);
+  }, [activeCache, path]);
 
-  return { data: state.data, error: state.error, loading: enabled && !state.loaded, reload };
+  return {
+    data: snapshot.data,
+    error: snapshot.error,
+    loading: enabled && !snapshot.loaded,
+    reload,
+  };
 }
