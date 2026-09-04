@@ -21,9 +21,15 @@ const CHART_HEIGHT = 180;
 const CHART_PAD_X = 34;
 const CHART_PAD_Y = 20;
 
-function chartX(semester: number): number {
-  const lastSemester = SEMESTERS[SEMESTERS.length - 1];
-  return CHART_PAD_X + ((semester - 1) / (lastSemester - 1)) * (CHART_WIDTH - CHART_PAD_X * 2);
+// `domain` is normally SEMESTERS (1..8), but a grade with a semester outside
+// the backend-validated 1..8 range — a legacy row, same case the journal
+// handles — would otherwise plot past CHART_WIDTH: dividing by the fixed
+// SEMESTERS range instead of the actual domain silently clipped it off the
+// chart. See `chartSemesters` below, which extends the domain to match.
+function chartX(semester: number, domain: number[]): number {
+  const first = domain[0];
+  const last = domain[domain.length - 1];
+  return CHART_PAD_X + ((semester - first) / (last - first)) * (CHART_WIDTH - CHART_PAD_X * 2);
 }
 
 function chartY(avg: number): number {
@@ -70,6 +76,12 @@ export function StatisticsPage() {
     const retakes = grades.filter((g) => sessionTypes.get(g.id) === 'retake');
     const regular = grades.filter((g) => sessionTypes.get(g.id) !== 'retake');
 
+    // Same fixed-list-plus-overflow approach as the journal: keeps the usual
+    // 1..8 axis stable while still giving an out-of-range semester its own
+    // tick instead of clipping it.
+    const unexpectedSemesters = presentSemesters.filter((s) => !SEMESTERS.includes(s)).sort((a, b) => a - b);
+    const chartSemesters = unexpectedSemesters.length ? [...SEMESTERS, ...unexpectedSemesters] : SEMESTERS;
+
     return {
       overallAvg,
       total: grades.length,
@@ -78,6 +90,7 @@ export function StatisticsPage() {
       bestSubject,
       semesterAverages: bySemesterAvg,
       presentSemesters,
+      chartSemesters,
       subjectMatrix,
       retakeCount: retakes.length,
       retakeAvg: retakes.length ? average(retakes.map((g) => g.grade)) : null,
@@ -186,10 +199,10 @@ export function StatisticsPage() {
                       </text>
                     </g>
                   ))}
-                  {SEMESTERS.map((semester) => (
+                  {stats.chartSemesters.map((semester) => (
                     <text
                       key={semester}
-                      x={chartX(semester)}
+                      x={chartX(semester, stats.chartSemesters)}
                       y={CHART_HEIGHT - 2}
                       textAnchor="middle"
                       className="trend-axis-label"
@@ -200,13 +213,13 @@ export function StatisticsPage() {
                   <polyline
                     className="trend-line"
                     points={stats.semesterAverages
-                      .map(({ semester, avg }) => `${chartX(semester)},${chartY(avg)}`)
+                      .map(({ semester, avg }) => `${chartX(semester, stats.chartSemesters)},${chartY(avg)}`)
                       .join(' ')}
                   />
                   {stats.semesterAverages.map(({ semester, avg }) => (
                     <circle
                       key={semester}
-                      cx={chartX(semester)}
+                      cx={chartX(semester, stats.chartSemesters)}
                       cy={chartY(avg)}
                       r={5}
                       className="trend-point"
