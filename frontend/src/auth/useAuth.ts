@@ -3,8 +3,10 @@ import type { AuthUser } from '../types';
 
 export interface AuthContextValue {
   user: AuthUser | null;
+  /** True until the initial session probe against the backend has answered. */
+  initializing: boolean;
   login: (username: string, password: string) => Promise<AuthUser>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 /**

@@ -47,7 +47,13 @@ On first startup Flyway creates the schema and seeds an admin account with usern
 
 Configurable env vars: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`,
 `DB_SSLMODE`, `SERVER_PORT`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `SEED_ADMIN_USERNAME`,
-`SEED_ADMIN_PASSWORD`, `SEED_DEMO_DATA`, `FRONTEND_ORIGIN`.
+`SEED_ADMIN_PASSWORD`, `SEED_DEMO_DATA`, `FRONTEND_ORIGIN`, `AUTH_COOKIE_SECURE`,
+`AUTH_COOKIE_SAME_SITE`.
+
+The session JWT is delivered in an httpOnly cookie. When the frontend is served from a
+different host than the API (as on Render), set `AUTH_COOKIE_SECURE=true` and
+`AUTH_COOKIE_SAME_SITE=None`, or the browser will drop the cookie; the defaults
+(`false`/`Lax`) are for running both on localhost.
 
 #### Demo data (optional)
 
@@ -58,8 +64,8 @@ events, so there's something to look at on every page. Disabled by default — o
 it on a local/test database, never against a live production database. Demo credentials
 (valid under the same rules as manually created accounts):
 
-* Teachers: `teacher1@uni-sofia.bg` … `teacher8@uni-sofia.bg`, password `password12345`
-* Students: `student1@uni-sofia.bg` … `student20@uni-sofia.bg`, password `password12345`
+* Teachers: `teacher1@uni-sofia.bg` … `teacher8@uni-sofia.bg`, password `Demo-Markly2024`
+* Students: `student1@uni-sofia.bg` … `student20@uni-sofia.bg`, password `Demo-Markly2024`
 
 For a remote database (e.g. [Neon](https://neon.tech)), set `DB_HOST` to the host from
 the connection string and `DB_SSLMODE=require`:

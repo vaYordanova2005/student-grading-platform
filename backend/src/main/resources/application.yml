@@ -19,6 +19,14 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
+  auth:
+    cookie:
+      # The SPA and the API are separate origins in production, so the session
+      # cookie has to be SameSite=None (and therefore Secure) there; locally
+      # over plain http it must stay Lax, since browsers drop Secure cookies
+      # on http://localhost's cross-origin requests.
+      secure: ${AUTH_COOKIE_SECURE:false}
+      same-site: ${AUTH_COOKIE_SAME_SITE:Lax}
   seed-admin:
     username: ${SEED_ADMIN_USERNAME:admin}
     password: ${SEED_ADMIN_PASSWORD}

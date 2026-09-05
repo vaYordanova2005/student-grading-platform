@@ -24,8 +24,8 @@ export function Layout({ title, children }: { title?: string; children: ReactNod
     { to: '/calendar', label: 'Календар', icon: CalendarIcon, end: false },
   ];
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login', { replace: true });
   };
 

@@ -1,7 +1,9 @@
 package com.markly.backend.config;
 
 import com.markly.backend.exception.ApiError;
+import com.markly.backend.security.AuthCookieService;
 import com.markly.backend.security.JwtAuthenticationFilter;
+import com.markly.backend.security.LoginRateLimitFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,12 +33,15 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final LoginRateLimitFilter loginRateLimitFilter;
     private final String allowedOrigin;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
+            LoginRateLimitFilter loginRateLimitFilter,
             @Value("${cors.allowed-origin}") String allowedOrigin) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.loginRateLimitFilter = loginRateLimitFilter;
         this.allowedOrigin = allowedOrigin;
     }
 
@@ -55,7 +60,10 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(allowedOrigin));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowedHeaders(List.of("Content-Type", AuthCookieService.CSRF_HEADER));
+        // The session cookie is httpOnly and cross-site, so the browser only
+        // sends it when credentialed requests are explicitly allowed.
+        configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
@@ -99,6 +107,9 @@ public class SecurityConfig {
             AuthenticationEntryPoint authenticationEntryPoint,
             AccessDeniedHandler accessDeniedHandler) throws Exception {
         http
+                // Spring's own CSRF filter is session/token-repository based;
+                // this app is stateless, so the equivalent check lives in
+                // JwtAuthenticationFilter and is bound to the issued token.
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> {})
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -106,7 +117,9 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Only the login endpoint is public: /me and /logout
+                        // both act on an existing session.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/teacher/**").hasRole("TEACHER")
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
@@ -115,7 +128,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/calendar/**").authenticated()
                         .requestMatchers("/api/calendar/**").hasAnyRole("ADMIN", "TEACHER")
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(loginRateLimitFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

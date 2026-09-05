@@ -41,22 +41,49 @@ program — there's no concept of a shorter/longer degree in the data model.
 
 ## Auth model
 
-Stateless JWT only — no server-side sessions, no cookies, no refresh tokens. A token is
-issued once at login (`JwtService`, `JWT_EXPIRATION_MINUTES`, default 480 = 8h) and must
-be re-obtained by logging in again after it expires; there is no `/api/auth/refresh` or
-similar. CSRF protection is deliberately disabled in `SecurityConfig`
-(`csrf(csrf -> csrf.disable())`) — safe *because* auth is a Bearer token, not a cookie;
-if cookie-based auth is ever introduced, CSRF protection has to come back with it. CORS
-allows exactly one origin (`FRONTEND_ORIGIN`/`cors.allowed-origin`), not a wildcard.
+Stateless JWT, delivered in an **httpOnly cookie** (`markly_token`) rather than to
+JavaScript — an XSS hole in the SPA can then use the session while the page is open, but
+cannot read the token out and keep it. A token is issued once at login (`JwtService`,
+`JWT_EXPIRATION_MINUTES`, default 480 = 8h) and must be re-obtained by logging in again
+after it expires; there is no `/api/auth/refresh` or similar. `GET /api/auth/me` is how
+the SPA recovers who it is after a reload, since it cannot read the cookie itself.
+
+Because the browser now attaches the cookie to cross-site requests too, CSRF protection
+is required. Spring's own CSRF filter is session-based and this app is stateless, so the
+check lives in `JwtAuthenticationFilter`: every non-GET request must carry an
+`X-CSRF-Token` header equal to `HMAC(jwt-secret, "csrf:" + jti)`, a value the SPA gets
+with the session and a foreign site cannot compute. On Render the SPA and the API are
+separate hosts, so the cookie needs `SameSite=None; Secure` (`AUTH_COOKIE_SAME_SITE`,
+`AUTH_COOKIE_SECURE`); locally over plain http it stays `Lax`. CORS allows exactly one
+origin (`FRONTEND_ORIGIN`/`cors.allowed-origin`), not a wildcard, with credentials
+enabled.
+
+A JWT cannot be withdrawn, so revocation is expressed as `users.token_version`: it is
+copied into every token and re-checked on every request, and bumping it (logout,
+deactivation) retires every outstanding token for that account at once.
+
+## Brute-force protection and password rules
+
+`LoginRateLimitFilter` caps login attempts per client address (15 per 5 minutes → 429);
+`LoginAttemptService` locks an account for 15 minutes after 5 consecutive failures (→
+423) and writes every login outcome to the `com.markly.audit` logger. The rate-limit
+counters are in-memory, which is enough for the single instance this is deployed as — a
+multi-instance deployment would need them shared (Redis) or enforced at the edge.
+
+Passwords must be at least 10 characters with an upper-case letter, a lower-case letter
+and a digit, must not contain the username's local part, and must not be one of the
+common passwords listed in `UserValidationService`.
 
 ## No self-service or admin account management beyond create
 
 An admin can list users (`GET /api/admin/users`) and create one
-(`POST /api/admin/users`) — that's the entire user-management surface. There is no edit,
-deactivate, or delete endpoint for any account, and no self-service password reset or
-change for any role (admin, teacher, or student) — the only way to change a password is
-for an admin to create a new account with one. This is a deliberate scope cut, not an
-oversight; don't assume a missing edit/delete endpoint is a bug to silently "fix."
+(`POST /api/admin/users`) — that's the entire user-management surface. An admin can also
+deactivate/reactivate an account (`PUT /api/admin/users/{id}/status`) and lift a
+brute-force lockout (`POST /api/admin/users/{id}/unlock`). There is still no edit or
+delete endpoint for an account, and no self-service password reset or change for any
+role (admin, teacher, or student) — the only way to change a password is for an admin to
+create a new account with one. This is a deliberate scope cut, not an oversight; don't
+assume a missing edit/delete endpoint is a bug to silently "fix."
 
 ## Demo data
 
@@ -71,10 +98,10 @@ oversight; don't assume a missing edit/delete endpoint is a bug to silently "fix
 ## Passwords
 
 **All accounts (admin, all teachers, all students) use the same password:
-`password12345`.** No exceptions. If a new account is added manually through the admin
+`Demo-Markly2024`.** No exceptions. If a new account is added manually through the admin
 panel, give it the same password unless explicitly asked otherwise.
 
 ## Admin credentials
 
-`admin` / `password12345` (see `SEED_ADMIN_USERNAME` / `SEED_ADMIN_PASSWORD` in
+`admin` / `Demo-Markly2024` (see `SEED_ADMIN_USERNAME` / `SEED_ADMIN_PASSWORD` in
 `backend/.env` for the real value if someone changed it locally).

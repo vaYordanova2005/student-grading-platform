@@ -7,9 +7,10 @@ backlog or aspiration). A student account is created by an admin
 ## Login
 
 `POST /api/auth/login` — email/username + password, validated by Spring Security against
-the `users` table. On success the server issues a JWT (`AuthController`,
-`web/dto/LoginResponse`) containing the username and role; the frontend stores it and
-attaches it as a Bearer token to every subsequent request. There is no "forgot password"
+the `users` table. On success the server issues a JWT (`AuthController`)
+in an httpOnly cookie the browser attaches to every subsequent request; the response body
+(`web/dto/LoginResponse`) carries only the username, the role and a CSRF token. Five
+wrong passwords in a row lock the account for 15 minutes. There is no "forgot password"
 or self-service password change — only an admin can set a student's password (via account
 creation; there's no reset endpoint either, for any role).
 

@@ -10,8 +10,11 @@ export function ProtectedRoute({
   allowedRole?: Role;
   children: ReactNode;
 }) {
-  const { user } = useAuth();
+  const { user, initializing } = useAuth();
 
+  // Redirecting while the session probe is still in flight would bounce a
+  // signed-in user to the login page on every page reload.
+  if (initializing) return <div className="page-loading">Зареждане…</div>;
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRole && user.role !== allowedRole) {
     return <Navigate to={`/${user.role.toLowerCase()}`} replace />;

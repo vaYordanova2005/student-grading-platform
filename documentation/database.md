@@ -15,6 +15,10 @@ PostgreSQL. Schema is owned by Flyway migrations in
 | `username` | `VARCHAR(255)` | `NOT NULL`, `UNIQUE` — an email address for all roles, see [`decisions.md`](decisions.md) |
 | `password` | `VARCHAR(255)` | `NOT NULL` — hashed, never plaintext |
 | `role` | `VARCHAR(20)` | `NOT NULL`, `CHECK (role IN ('ADMIN', 'TEACHER', 'STUDENT'))` |
+| `enabled` | `BOOLEAN` | `NOT NULL`, default `TRUE` — an admin can deactivate an account instead of deleting it |
+| `locked_until` | `TIMESTAMP` | Set by the brute-force lockout, cleared when it expires or an admin unlocks |
+| `failed_login_attempts` | `INTEGER` | `NOT NULL`, default `0` — consecutive failures, reset on a successful login |
+| `token_version` | `INTEGER` | `NOT NULL`, default `0` — carried in every JWT; bumping it invalidates all outstanding tokens for that user |
 
 ### `grades`
 
@@ -130,6 +134,7 @@ since legacy/unattributable rows can still be `NULL`.
 | V4 | `V4__add_calendar_events.sql` | Creates `calendar_events`, index on `start_date`. |
 | V5 | `V5__add_student_profiles.sql` | Creates `student_profiles` (one-to-one with `users`), including a `personal_email` column. |
 | V6 | `V6__drop_student_profile_personal_email.sql` | Drops `student_profiles.personal_email` — redundant with `users.username`. |
+| V7 | `V7__add_account_security_columns.sql` | Adds `enabled`, `locked_until`, `failed_login_attempts`, `token_version` to `users` — account deactivation, brute-force lockout, and token revocation. |
 
 ## Seeding
 

@@ -52,6 +52,20 @@ body {
   min-height: 100vh;
 }
 
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: var(--text-muted, #6b7280);
+}
+
+.user-actions {
+  display: flex;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
 .topbar {
   display: flex;
   align-items: center;

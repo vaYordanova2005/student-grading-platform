@@ -12,18 +12,18 @@ class UserValidationServiceTest {
 
     @Test
     void acceptsValidTeacher() {
-        assertDoesNotThrow(() -> service.validate(Role.TEACHER, "ivanov@uni-sofia.bg", "secret"));
+        assertDoesNotThrow(() -> service.validate(Role.TEACHER, "ivanov@uni-sofia.bg", "Silna-Parola1"));
     }
 
     @Test
     void acceptsTeacherWithTrailingDigits() {
-        assertDoesNotThrow(() -> service.validate(Role.TEACHER, "teacher1@uni-sofia.bg", "secret"));
+        assertDoesNotThrow(() -> service.validate(Role.TEACHER, "teacher1@uni-sofia.bg", "Silna-Parola1"));
     }
 
     @Test
     void rejectsTeacherWithBadEmailDomain() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.validate(Role.TEACHER, "ivanov@gmail.com", "secret"));
+                () -> service.validate(Role.TEACHER, "ivanov@gmail.com", "Silna-Parola1"));
     }
 
     @Test
@@ -34,13 +34,13 @@ class UserValidationServiceTest {
 
     @Test
     void acceptsValidStudent() {
-        assertDoesNotThrow(() -> service.validate(Role.STUDENT, "student1@test.com", "1234567890"));
+        assertDoesNotThrow(() -> service.validate(Role.STUDENT, "student1@test.com", "Silna-Parola1"));
     }
 
     @Test
     void rejectsStudentWithInvalidEmail() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.validate(Role.STUDENT, "not-an-email", "1234567890"));
+                () -> service.validate(Role.STUDENT, "not-an-email", "Silna-Parola1"));
     }
 
     @Test
@@ -50,8 +50,32 @@ class UserValidationServiceTest {
     }
 
     @Test
+    void rejectsPasswordWithoutAnUppercaseLetter() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.validate(Role.STUDENT, "student1@test.com", "silna-parola1"));
+    }
+
+    @Test
+    void rejectsPasswordWithoutADigit() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.validate(Role.STUDENT, "student1@test.com", "Silna-Parola"));
+    }
+
+    @Test
+    void rejectsPasswordContainingTheUsername() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.validate(Role.STUDENT, "student1@test.com", "Student1-Parola2"));
+    }
+
+    @Test
+    void rejectsACommonPassword() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.validate(Role.STUDENT, "ivan@test.com", "Password123"));
+    }
+
+    @Test
     void rejectsAdminRole() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.validate(Role.ADMIN, "admin", "password"));
+                () -> service.validate(Role.ADMIN, "admin", "Silna-Parola1"));
     }
 }

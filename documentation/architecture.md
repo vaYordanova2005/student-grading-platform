@@ -29,16 +29,23 @@ frontend (React + Vite, TS)  --HTTP/JSON + JWT-->  backend (Spring Boot)  -->  P
 | `domain/` | JPA entities — `User`, `Grade`, `StudentProfile` (registrar info, one-to-one with `User`), `CalendarEvent`, `Role` (enum: ADMIN/TEACHER/STUDENT), `CalendarEventType` (enum: TEST/HOLIDAY/EVENT). |
 | `repository/` | Spring Data JPA repositories — `UserRepository`, `GradeRepository`, `StudentProfileRepository`, `CalendarEventRepository`. |
 | `service/` | Business/validation logic outside the controllers — `UserValidationService` (username/email rules, see [`decisions.md`](decisions.md)). |
-| `security/` | JWT — `JwtService` (issues/validates tokens), `JwtAuthenticationFilter` (reads `Authorization: Bearer`), `AppUserDetailsService` + `AppUserPrincipal` (Spring Security user model). |
+| `security/` | JWT — `JwtService` (issues/validates tokens, derives the CSRF token), `AuthCookieService` (the httpOnly session cookie), `JwtAuthenticationFilter` (reads the cookie, checks the CSRF header and the token version), `LoginRateLimitFilter` + `LoginAttemptService` (brute-force limits and the login audit trail), `AppUserDetailsService` + `AppUserPrincipal` (Spring Security user model). |
 | `config/` | `SecurityConfig` (filter chain, roles per endpoint), `DataSeeder` (admin account on startup), `DemoDataSeeder` (demo teachers/students/grades/calendar events/student profiles when `SEED_DEMO_DATA=true`). |
 | `exception/` | `ApiExceptionHandler` (`@ControllerAdvice`) + `ApiError` — a single error format across all endpoints. |
 
 ### Authentication / authorization
 
-* Login → `AuthController` → issues a JWT (`JwtService`), signed with `JWT_SECRET`.
-* Every subsequent request carries the JWT in the `Authorization` header;
-  `JwtAuthenticationFilter` validates it and puts an `Authentication` in the
-  `SecurityContext`.
+* Login → `AuthController` → issues a JWT (`JwtService`), signed with `JWT_SECRET`, and
+  returns it as an **httpOnly cookie** (`AuthCookieService`) so page scripts can never
+  read it. The response body carries only username, role and a CSRF token.
+* Every subsequent request carries the cookie automatically; `JwtAuthenticationFilter`
+  validates it, requires the `X-CSRF-Token` header on state-changing methods, reloads the
+  user (so role and account state are never trusted from the claim), rejects a token
+  whose `tv` claim no longer matches the user's `token_version`, and puts an
+  `Authentication` in the `SecurityContext`.
+* Login is rate limited per client address (`LoginRateLimitFilter`) and per account —
+  five consecutive failures lock the account for 15 minutes (`LoginAttemptService`).
+  Every login outcome is written to the `com.markly.audit` logger.
 * Role-based access is enforced in `SecurityConfig` (endpoint → role) and additionally in
   the controllers where needed (e.g. a teacher can only see/write their own grades).
 

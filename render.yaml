@@ -38,6 +38,12 @@ services:
       # redeploy the backend.
       - key: FRONTEND_ORIGIN
         value: https://markly-frontend.onrender.com
+      # The session cookie is httpOnly and, because the SPA lives on another
+      # host, cross-site — which browsers only accept as SameSite=None; Secure.
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
+      - key: AUTH_COOKIE_SAME_SITE
+        value: None
 
   # React (Vite) SPA
   - type: web

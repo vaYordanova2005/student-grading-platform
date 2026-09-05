@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import apiClient, { extractErrorMessage } from '../api/client';
 import { Layout } from '../routes/Layout';
+import { useAuth } from '../auth/useAuth';
 import type { Role, StudentProfileSummary, UserSummary } from '../types';
 
 type ProfileFormState = {
@@ -51,6 +52,7 @@ function toFormState(profile: StudentProfileSummary): ProfileFormState {
 }
 
 export function AdminDashboard() {
+  const { user } = useAuth();
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [role, setRole] = useState<Role>('STUDENT');
   const [username, setUsername] = useState('');
@@ -72,6 +74,36 @@ export function AdminDashboard() {
   // one — the `ignore` flag below rules that out.
   const [usersToken, setUsersToken] = useState(0);
   const reloadUsers = () => setUsersToken((token) => token + 1);
+
+  // Which row currently has a status call in flight, so only that row's
+  // buttons are disabled rather than the whole table.
+  const [statusPendingId, setStatusPendingId] = useState<number | null>(null);
+
+  const handleToggleStatus = async (target: UserSummary) => {
+    setError(null);
+    setStatusPendingId(target.id);
+    try {
+      await apiClient.put(`/admin/users/${target.id}/status`, { enabled: !target.enabled });
+      reloadUsers();
+    } catch (err) {
+      setError(extractErrorMessage(err));
+    } finally {
+      setStatusPendingId(null);
+    }
+  };
+
+  const handleUnlock = async (target: UserSummary) => {
+    setError(null);
+    setStatusPendingId(target.id);
+    try {
+      await apiClient.post(`/admin/users/${target.id}/unlock`);
+      reloadUsers();
+    } catch (err) {
+      setError(extractErrorMessage(err));
+    } finally {
+      setStatusPendingId(null);
+    }
+  };
 
   useEffect(() => {
     let ignore = false;
@@ -242,6 +274,8 @@ export function AdminDashboard() {
                 <th>ID</th>
                 <th>Потребителско име</th>
                 <th>Роля</th>
+                <th>Статус</th>
+                <th>Действие</th>
               </tr>
             </thead>
             <tbody>
@@ -250,6 +284,29 @@ export function AdminDashboard() {
                   <td>{u.id}</td>
                   <td>{u.username}</td>
                   <td>{u.role}</td>
+                  <td>
+                    {!u.enabled ? 'Деактивиран' : u.locked ? 'Временно заключен' : 'Активен'}
+                  </td>
+                  <td className="user-actions">
+                    {u.username !== user?.username && (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(u)}
+                        disabled={statusPendingId === u.id}
+                      >
+                        {u.enabled ? 'Деактивирай' : 'Активирай'}
+                      </button>
+                    )}
+                    {u.locked && u.enabled && (
+                      <button
+                        type="button"
+                        onClick={() => handleUnlock(u)}
+                        disabled={statusPendingId === u.id}
+                      >
+                        Отключи
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

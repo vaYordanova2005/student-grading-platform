@@ -38,8 +38,8 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
 
-    static final String DEMO_TEACHER_PASSWORD = "password12345";
-    static final String DEMO_STUDENT_PASSWORD = "password12345";
+    static final String DEMO_TEACHER_PASSWORD = "Demo-Markly2024";
+    static final String DEMO_STUDENT_PASSWORD = "Demo-Markly2024";
 
     private static final int TEACHER_COUNT = 8;
     private static final int STUDENT_COUNT = 20;
