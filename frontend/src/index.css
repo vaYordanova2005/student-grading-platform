@@ -375,14 +375,18 @@ td {
   flex-shrink: 0;
   background: transparent;
   color: #8a9290;
-  padding: 0;
+  padding: 0.3rem;
+  border-radius: 999px;
   height: auto;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.login-eye-toggle:hover {
-  background: transparent;
-  color: var(--primary);
+button.login-eye-toggle:hover,
+button.login-eye-toggle:focus-visible,
+button.login-eye-toggle:active {
+  background: rgba(62, 207, 193, 0.16);
+  color: var(--primary-hover);
 }
 
 .login-eye-toggle svg {
@@ -420,6 +424,7 @@ button.login-forgot:active {
   font-size: 0.8rem;
   opacity: 0.75;
   margin: -0.25rem 0 0.75rem;
+  text-align: center;
 }
 
 .login-btn {
