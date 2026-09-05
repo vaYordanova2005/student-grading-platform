@@ -21,6 +21,13 @@ import org.springframework.stereotype.Component;
  * Render ingress; raise it too far and the entry becomes caller-controlled
  * again.
  *
+ * <p>No header parsing can tell a request that travelled the whole chain from
+ * one that skipped it: with {@code trusted-proxy-hops=2}, an attacker who
+ * reaches the origin directly and sends a single forged entry produces a
+ * header of exactly two entries, and the forged one is the one picked here.
+ * Only an origin lock — the origin accepting traffic solely from the CDN —
+ * closes that, so it has to be set up together with raising this value.
+ *
  * <p>The value is only used for rate-limit bucketing and audit lines — never
  * for authorization.
  */
@@ -41,10 +48,12 @@ public class ClientIpResolver {
         if (forwarded != null && !forwarded.isBlank()) {
             String[] hops = forwarded.split(",");
             // A header with fewer entries than expected means the request did
-            // not come through the full proxy chain; the oldest entry we can
-            // see is then the least attacker-influenced one available.
-            int index = Math.max(0, hops.length - trustedProxyHops);
-            String clientHop = hops[index].trim();
+            // not come through the full proxy chain. Fall back to the
+            // rightmost entry, not the leftmost: entries are appended, so the
+            // right end is the part closest to whatever proxy actually saw the
+            // connection, while the left end is entirely caller-controlled.
+            int index = hops.length - trustedProxyHops;
+            String clientHop = hops[index < 0 ? hops.length - 1 : index].trim();
             if (!clientHop.isEmpty()) {
                 return clientHop;
             }

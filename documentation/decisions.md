@@ -74,7 +74,9 @@ caller-controlled and using them would let an attacker mint a fresh bucket per r
 How far from the right depends on how many proxies are actually deployed in front of the
 app: `TRUSTED_PROXY_HOPS` (`app.security.trusted-proxy-hops`, default 1 = Render alone).
 Putting another proxy in front — Cloudflare, say — without raising it collapses every
-user into one bucket keyed by the Render ingress.
+user into one bucket keyed by the Render ingress; raising it *without* locking the origin
+down to that CDN is worse, since an attacker reaching the origin directly can then forge
+the entry the limiter trusts. See the README for the deployment side of this.
 
 `LoginAttemptService` locks an account for 15 minutes after 5 consecutive failures (→
 423) and writes every login outcome to the `com.markly.audit` logger. The rate-limit

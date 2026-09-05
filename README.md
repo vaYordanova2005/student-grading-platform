@@ -58,6 +58,14 @@ rate limiter reads the client address that many entries from the right of
 `X-Forwarded-For`. Raise it if you put another proxy (e.g. Cloudflare) in front of
 Render, or every user ends up sharing one rate-limit bucket.
 
+If you do add a CDN, **lock the origin down to it at the same time** (Render accepting
+traffic only from the CDN). Nothing in the header itself distinguishes a request that
+travelled the full chain from one that skipped it: with `TRUSTED_PROXY_HOPS=2`, an
+attacker who reaches Render directly and sends a single forged `X-Forwarded-For` entry
+produces a header of exactly two entries, and the forged one is what the rate limiter
+would trust — a fresh bucket on every request. The origin lock, not the header parsing,
+is what prevents that.
+
 The session JWT is delivered in an httpOnly cookie. When the frontend is served from a
 different host than the API (as on Render), set `AUTH_COOKIE_SECURE=true` and
 `AUTH_COOKIE_SAME_SITE=None`, or the browser will drop the cookie; the defaults
