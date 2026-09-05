@@ -51,7 +51,20 @@ On first startup Flyway creates the schema and seeds an admin account with usern
 Configurable env vars: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`,
 `DB_SSLMODE`, `SERVER_PORT`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `SEED_ADMIN_USERNAME`,
 `SEED_ADMIN_PASSWORD`, `SEED_DEMO_DATA`, `FRONTEND_ORIGIN`, `AUTH_COOKIE_SECURE`,
-`AUTH_COOKIE_SAME_SITE`.
+`AUTH_COOKIE_SAME_SITE`, `TRUSTED_PROXIES`.
+
+`TRUSTED_PROXIES` (empty by default) lists the networks, as comma-separated CIDRs, that
+the proxies in front of the app occupy. The login rate limiter reads the client address
+from `X-Forwarded-For`, skipping entries written by those networks and taking the first
+one that is not. Empty is correct for Render on its own, which appends exactly one entry.
+
+Put a CDN (e.g. Cloudflare) in front and you must add its ranges here, or every user
+ends up sharing one rate-limit bucket keyed by the CDN. Matching networks rather than
+counting entries is also what keeps a CDN bypass from being exploitable: a request that
+reaches the origin directly carries the attacker's own address as its last entry, which
+is not a trusted proxy and so is what the limiter buckets on. An origin lock (the origin
+accepting traffic only from the CDN) is still worth setting up, but the rate limiter no
+longer depends on it.
 
 The session JWT is delivered in an httpOnly cookie. When the frontend is served from a
 different host than the API (as on Render), set `AUTH_COOKIE_SECURE=true` and

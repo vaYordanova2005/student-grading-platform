@@ -42,10 +42,15 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     private final Map<String, Window> attempts = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final LoginAttemptService loginAttemptService;
+    private final ClientIpResolver clientIpResolver;
 
-    public LoginRateLimitFilter(ObjectMapper objectMapper, LoginAttemptService loginAttemptService) {
+    public LoginRateLimitFilter(
+            ObjectMapper objectMapper,
+            LoginAttemptService loginAttemptService,
+            ClientIpResolver clientIpResolver) {
         this.objectMapper = objectMapper;
         this.loginAttemptService = loginAttemptService;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Override
@@ -60,8 +65,13 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        String clientIp = ClientIp.of(request);
-        if (isExhausted(clientIp)) {
+        String clientIp = clientIpResolver.resolve(request);
+        // The slot is taken before the attempt runs, not after it answers:
+        // counting afterwards let a burst of concurrent requests all pass the
+        // check while the count still read 14, overshooting the quota. A
+        // successful login gives its slot back below.
+        Window window = reserveSlot(clientIp);
+        if (window == null) {
             loginAttemptService.onBlocked("-", clientIp, "RATE_LIMIT");
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setHeader("Retry-After", String.valueOf(WINDOW.toSeconds()));
@@ -72,32 +82,36 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
-        filterChain.doFilter(request, response);
-
-        // Only failures count. A whole computer lab shares one NAT address,
-        // and charging their successful logins against the same quota would
-        // lock the room out during ordinary use; a guessing run, by
-        // definition, produces failures.
-        if (response.getStatus() != HttpStatus.OK.value()) {
-            countFailure(clientIp);
+        boolean succeeded = false;
+        try {
+            filterChain.doFilter(request, response);
+            succeeded = response.getStatus() == HttpStatus.OK.value();
+        } finally {
+            // Only failures count against the quota. A whole computer lab
+            // shares one NAT address, and charging their successful logins
+            // would lock the room out during ordinary use; a guessing run, by
+            // definition, produces failures. A request that blew up on the way
+            // out keeps its slot — it never proved itself a success, and the
+            // release has to happen here rather than after doFilter so an
+            // exception cannot skip the accounting entirely.
+            if (succeeded) {
+                window.count.decrementAndGet();
+            }
         }
     }
 
-    /** @return {@code true} once the client has used up its quota for the current window. */
-    private boolean isExhausted(String clientIp) {
-        Window window = attempts.get(clientIp);
-        return window != null && !window.hasExpired(Instant.now())
-                && window.count.get() >= MAX_ATTEMPTS_PER_WINDOW;
-    }
-
-    private void countFailure(String clientIp) {
+    /**
+     * @return the window the attempt was charged to, or {@code null} if the
+     * client has used up its quota for the current one.
+     */
+    private Window reserveSlot(String clientIp) {
         Instant now = Instant.now();
         if (attempts.size() > MAX_TRACKED_CLIENTS) {
-            attempts.values().removeIf(window -> window.hasExpired(now));
+            attempts.values().removeIf(expired -> expired.hasExpired(now));
         }
-        attempts.compute(clientIp, (ip, existing) ->
-                        existing == null || existing.hasExpired(now) ? new Window(now) : existing)
-                .count.incrementAndGet();
+        Window window = attempts.compute(clientIp, (ip, existing) ->
+                existing == null || existing.hasExpired(now) ? new Window(now) : existing);
+        return window.count.incrementAndGet() <= MAX_ATTEMPTS_PER_WINDOW ? window : null;
     }
 
     private static final class Window {

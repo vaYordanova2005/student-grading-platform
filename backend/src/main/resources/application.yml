@@ -19,6 +19,12 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
+  security:
+    # Networks (comma-separated CIDRs) occupied by the proxies in front of the
+    # app; their entries are skipped when reading the client address from
+    # X-Forwarded-For. Empty is right for Render on its own — it appends
+    # exactly one entry. Add a CDN's ranges here when one is put in front.
+    trusted-proxies: ${TRUSTED_PROXIES:}
   auth:
     cookie:
       # The SPA and the API are separate origins in production, so the session

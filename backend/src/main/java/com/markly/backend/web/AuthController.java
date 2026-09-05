@@ -3,7 +3,7 @@ package com.markly.backend.web;
 import com.markly.backend.repository.UserRepository;
 import com.markly.backend.security.AppUserPrincipal;
 import com.markly.backend.security.AuthCookieService;
-import com.markly.backend.security.ClientIp;
+import com.markly.backend.security.ClientIpResolver;
 import com.markly.backend.security.JwtService;
 import com.markly.backend.security.LoginAttemptService;
 import com.markly.backend.service.UserValidationService;
@@ -41,6 +41,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final UserValidationService userValidationService;
     private final PasswordEncoder passwordEncoder;
+    private final ClientIpResolver clientIpResolver;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -49,7 +50,8 @@ public class AuthController {
             LoginAttemptService loginAttemptService,
             UserRepository userRepository,
             UserValidationService userValidationService,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            ClientIpResolver clientIpResolver) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.authCookieService = authCookieService;
@@ -57,12 +59,13 @@ public class AuthController {
         this.userRepository = userRepository;
         this.userValidationService = userValidationService;
         this.passwordEncoder = passwordEncoder;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-        String clientIp = ClientIp.of(httpRequest);
+        String clientIp = clientIpResolver.resolve(httpRequest);
         try {
             var authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.username(), request.password()));
@@ -125,7 +128,7 @@ public class AuthController {
 
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
             loginAttemptService.onBlocked(
-                    user.getUsername(), ClientIp.of(httpRequest), "PASSWORD_CHANGE_WRONG_CURRENT");
+                    user.getUsername(), clientIpResolver.resolve(httpRequest), "PASSWORD_CHANGE_WRONG_CURRENT");
             // Deliberately a 400 and not a 401: the SPA treats a 401 as "the
             // session is gone" and logs out, which would be a surprising way
             // to answer a typo in the current-password field.
