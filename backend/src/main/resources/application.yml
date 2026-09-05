@@ -1,6 +1,12 @@
 spring:
   application:
     name: backend
+  main:
+    # Free-tier hosts (e.g. Render) throttle CPU hard enough that eager bean
+    # init can push Tomcat's actual listen-start past the platform's
+    # port-scan timeout. Lazy init defers non-essential beans to first use,
+    # cutting context startup time.
+    lazy-initialization: true
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:markly}?sslmode=${DB_SSLMODE:disable}
     username: ${DB_USERNAME:postgres}
