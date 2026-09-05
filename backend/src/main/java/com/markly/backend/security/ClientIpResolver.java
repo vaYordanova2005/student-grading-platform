@@ -2,31 +2,35 @@ package com.markly.backend.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Behind a proxy {@code getRemoteAddr()} is the proxy, so the client is read
- * from {@code X-Forwarded-For} — counting from the <em>right</em>, not the
- * left. Proxies append to this header rather than replacing it, so a client
- * that sends {@code X-Forwarded-For: 1.2.3.4} itself ends up as
- * {@code 1.2.3.4, <real address>}: the leftmost entries are whatever the
- * caller chose, and using them would let an attacker mint a fresh rate-limit
- * bucket on every request.
+ * from {@code X-Forwarded-For} — walking from the <em>right</em>. Proxies
+ * append to this header rather than replacing it, so a client that sends
+ * {@code X-Forwarded-For: 1.2.3.4} itself ends up as
+ * {@code 1.2.3.4, <real address>}: the left end is whatever the caller chose,
+ * and trusting it would let an attacker mint a fresh rate-limit bucket on
+ * every request.
  *
- * <p>How far from the right to look depends on how many proxies actually sit
- * in front of the app, which is deployment configuration rather than
- * something this code can know — hence {@code app.security.trusted-proxy-hops}
- * (1 for Render alone). Put another proxy in front, say Cloudflare, without
- * raising it and every user collapses into a single bucket keyed by the
- * Render ingress; raise it too far and the entry becomes caller-controlled
- * again.
+ * <p>Which entries to skip is decided by <em>who wrote them</em>, not by how
+ * many there are: {@code app.security.trusted-proxies} lists the networks the
+ * proxies in front of the app occupy (empty by default — Render appends
+ * exactly one entry, so the rightmost one is the client), and the first entry
+ * from the right that is not one of them is the client.
  *
- * <p>No header parsing can tell a request that travelled the whole chain from
- * one that skipped it: with {@code trusted-proxy-hops=2}, an attacker who
- * reaches the origin directly and sends a single forged entry produces a
- * header of exactly two entries, and the forged one is the one picked here.
- * Only an origin lock — the origin accepting traffic solely from the CDN —
- * closes that, so it has to be set up together with raising this value.
+ * <p>A hop count would have been simpler but breaks the moment a CDN is added
+ * in front: an attacker who bypasses the CDN and reaches the origin directly
+ * with one forged entry produces a header of exactly the expected length, and
+ * a count-based resolver would trust the forged entry. Matching networks
+ * instead, that request's rightmost entry is the attacker's own address —
+ * which is not a trusted proxy, so it is what gets used. (An origin lock is
+ * still worth having, but it is no longer the only thing standing between an
+ * attacker and an unlimited number of rate-limit buckets.)
  *
  * <p>The value is only used for rate-limit bucketing and audit lines — never
  * for authorization.
@@ -34,31 +38,44 @@ import org.springframework.stereotype.Component;
 @Component
 public class ClientIpResolver {
 
-    private final int trustedProxyHops;
+    private final List<IpAddressMatcher> trustedProxies;
 
-    public ClientIpResolver(@Value("${app.security.trusted-proxy-hops}") int trustedProxyHops) {
-        if (trustedProxyHops < 1) {
-            throw new IllegalArgumentException("app.security.trusted-proxy-hops must be at least 1");
-        }
-        this.trustedProxyHops = trustedProxyHops;
+    public ClientIpResolver(@Value("${app.security.trusted-proxies}") String trustedProxies) {
+        this.trustedProxies = Arrays.stream(trustedProxies.split(","))
+                .map(String::trim)
+                .filter(cidr -> !cidr.isEmpty())
+                .map(IpAddressMatcher::new)
+                .toList();
     }
 
     public String resolve(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
             String[] hops = forwarded.split(",");
-            // A header with fewer entries than expected means the request did
-            // not come through the full proxy chain. Fall back to the
-            // rightmost entry, not the leftmost: entries are appended, so the
-            // right end is the part closest to whatever proxy actually saw the
-            // connection, while the left end is entirely caller-controlled.
-            int index = hops.length - trustedProxyHops;
-            String clientHop = hops[index < 0 ? hops.length - 1 : index].trim();
-            if (!clientHop.isEmpty()) {
-                return clientHop;
+            for (int i = hops.length - 1; i >= 0; i--) {
+                String hop = hops[i].trim();
+                if (!hop.isEmpty() && !isTrustedProxy(hop)) {
+                    return hop;
+                }
             }
         }
         String remote = request.getRemoteAddr();
         return remote == null ? "unknown" : remote;
+    }
+
+    /**
+     * A malformed entry (an attacker is free to put anything in the header)
+     * matches nothing and is therefore treated as the client — which is the
+     * safe direction: it keeps the forged value in its own bucket instead of
+     * letting it skip past the real address to the left.
+     */
+    private boolean isTrustedProxy(String hop) {
+        return trustedProxies.stream().anyMatch(matcher -> {
+            try {
+                return matcher.matches(hop);
+            } catch (IllegalArgumentException ex) {
+                return false;
+            }
+        });
     }
 }

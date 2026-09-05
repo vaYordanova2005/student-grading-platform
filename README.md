@@ -51,20 +51,20 @@ On first startup Flyway creates the schema and seeds an admin account with usern
 Configurable env vars: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`,
 `DB_SSLMODE`, `SERVER_PORT`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `SEED_ADMIN_USERNAME`,
 `SEED_ADMIN_PASSWORD`, `SEED_DEMO_DATA`, `FRONTEND_ORIGIN`, `AUTH_COOKIE_SECURE`,
-`AUTH_COOKIE_SAME_SITE`, `TRUSTED_PROXY_HOPS`.
+`AUTH_COOKIE_SAME_SITE`, `TRUSTED_PROXIES`.
 
-`TRUSTED_PROXY_HOPS` (default 1) is how many proxies sit in front of the app — the login
-rate limiter reads the client address that many entries from the right of
-`X-Forwarded-For`. Raise it if you put another proxy (e.g. Cloudflare) in front of
-Render, or every user ends up sharing one rate-limit bucket.
+`TRUSTED_PROXIES` (empty by default) lists the networks, as comma-separated CIDRs, that
+the proxies in front of the app occupy. The login rate limiter reads the client address
+from `X-Forwarded-For`, skipping entries written by those networks and taking the first
+one that is not. Empty is correct for Render on its own, which appends exactly one entry.
 
-If you do add a CDN, **lock the origin down to it at the same time** (Render accepting
-traffic only from the CDN). Nothing in the header itself distinguishes a request that
-travelled the full chain from one that skipped it: with `TRUSTED_PROXY_HOPS=2`, an
-attacker who reaches Render directly and sends a single forged `X-Forwarded-For` entry
-produces a header of exactly two entries, and the forged one is what the rate limiter
-would trust — a fresh bucket on every request. The origin lock, not the header parsing,
-is what prevents that.
+Put a CDN (e.g. Cloudflare) in front and you must add its ranges here, or every user
+ends up sharing one rate-limit bucket keyed by the CDN. Matching networks rather than
+counting entries is also what keeps a CDN bypass from being exploitable: a request that
+reaches the origin directly carries the attacker's own address as its last entry, which
+is not a trusted proxy and so is what the limiter buckets on. An origin lock (the origin
+accepting traffic only from the CDN) is still worth setting up, but the rate limiter no
+longer depends on it.
 
 The session JWT is delivered in an httpOnly cookie. When the frontend is served from a
 different host than the API (as on Render), set `AUTH_COOKIE_SECURE=true` and

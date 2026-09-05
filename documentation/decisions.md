@@ -68,15 +68,20 @@ deactivation) retires every outstanding token for that account at once.
 minutes → 429). A slot is taken before the attempt runs and given back only if it
 succeeds, so concurrent requests cannot overshoot the quota and a successful login costs
 nothing — a lab behind one NAT address cannot lock itself out by signing in normally.
-The address is read from `X-Forwarded-For` counting from the right
-(`ClientIpResolver`) — proxies append rather than replace, so the leftmost entries are
-caller-controlled and using them would let an attacker mint a fresh bucket per request.
-How far from the right depends on how many proxies are actually deployed in front of the
-app: `TRUSTED_PROXY_HOPS` (`app.security.trusted-proxy-hops`, default 1 = Render alone).
-Putting another proxy in front — Cloudflare, say — without raising it collapses every
-user into one bucket keyed by the Render ingress; raising it *without* locking the origin
-down to that CDN is worse, since an attacker reaching the origin directly can then forge
-the entry the limiter trusts. See the README for the deployment side of this.
+The address is read from `X-Forwarded-For` from the right
+(`ClientIpResolver`) — proxies append rather than replace, so the left end is
+caller-controlled and using it would let an attacker mint a fresh bucket per request.
+Which entries to skip is decided by *who wrote them*: `TRUSTED_PROXIES`
+(`app.security.trusted-proxies`) lists the proxies' networks as CIDRs — empty for Render
+alone, which appends exactly one entry — and the first entry from the right outside those
+networks is the client.
+
+A hop count was the obvious alternative and is subtly broken once a CDN is added: an
+attacker who bypasses the CDN and hits the origin directly with one forged entry produces
+a header of exactly the expected length, so a count-based resolver trusts the forged
+value. Matching networks, that same request buckets on the attacker's real address. An
+origin lock is still worth having as defence in depth; the rate limiter no longer depends
+on it.
 
 `LoginAttemptService` locks an account for 15 minutes after 5 consecutive failures (→
 423) and writes every login outcome to the `com.markly.audit` logger. The rate-limit
