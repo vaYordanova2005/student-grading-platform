@@ -124,10 +124,10 @@ assume a missing edit/delete endpoint is a bug to silently "fix."
 ## Passwords
 
 **All accounts (admin, all teachers, all students) use the same password:
-`Demo-Markly2024`.** No exceptions. If a new account is added manually through the admin
+`password12345`.** No exceptions. If a new account is added manually through the admin
 panel, give it the same password unless explicitly asked otherwise.
 
 ## Admin credentials
 
-`admin` / `Demo-Markly2024` (see `SEED_ADMIN_USERNAME` / `SEED_ADMIN_PASSWORD` in
+`admin` / `password12345` (see `SEED_ADMIN_USERNAME` / `SEED_ADMIN_PASSWORD` in
 `backend/.env` for the real value if someone changed it locally).
