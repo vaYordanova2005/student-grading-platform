@@ -19,6 +19,10 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
+  security:
+    # How many proxies sit in front of the app; the client address is read
+    # that many entries from the right of X-Forwarded-For. 1 = Render alone.
+    trusted-proxy-hops: ${TRUSTED_PROXY_HOPS:1}
   auth:
     cookie:
       # The SPA and the API are separate origins in production, so the session

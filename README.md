@@ -51,7 +51,12 @@ On first startup Flyway creates the schema and seeds an admin account with usern
 Configurable env vars: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`,
 `DB_SSLMODE`, `SERVER_PORT`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`, `SEED_ADMIN_USERNAME`,
 `SEED_ADMIN_PASSWORD`, `SEED_DEMO_DATA`, `FRONTEND_ORIGIN`, `AUTH_COOKIE_SECURE`,
-`AUTH_COOKIE_SAME_SITE`.
+`AUTH_COOKIE_SAME_SITE`, `TRUSTED_PROXY_HOPS`.
+
+`TRUSTED_PROXY_HOPS` (default 1) is how many proxies sit in front of the app — the login
+rate limiter reads the client address that many entries from the right of
+`X-Forwarded-For`. Raise it if you put another proxy (e.g. Cloudflare) in front of
+Render, or every user ends up sharing one rate-limit bucket.
 
 The session JWT is delivered in an httpOnly cookie. When the frontend is served from a
 different host than the API (as on Render), set `AUTH_COOKIE_SECURE=true` and

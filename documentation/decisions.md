@@ -65,11 +65,16 @@ deactivation) retires every outstanding token for that account at once.
 ## Brute-force protection and password rules
 
 `LoginRateLimitFilter` caps **failed** login attempts per client address (15 per 5
-minutes → 429). Successful logins are not counted, so a lab behind one NAT address
-cannot lock itself out by signing in normally. The address comes from the *last* entry of
-`X-Forwarded-For` (`ClientIp`) — proxies append rather than replace, so the leftmost
-entry is caller-controlled and using it would let an attacker mint a fresh bucket per
-request; this assumes exactly one trusted proxy in front of the app.
+minutes → 429). A slot is taken before the attempt runs and given back only if it
+succeeds, so concurrent requests cannot overshoot the quota and a successful login costs
+nothing — a lab behind one NAT address cannot lock itself out by signing in normally.
+The address is read from `X-Forwarded-For` counting from the right
+(`ClientIpResolver`) — proxies append rather than replace, so the leftmost entries are
+caller-controlled and using them would let an attacker mint a fresh bucket per request.
+How far from the right depends on how many proxies are actually deployed in front of the
+app: `TRUSTED_PROXY_HOPS` (`app.security.trusted-proxy-hops`, default 1 = Render alone).
+Putting another proxy in front — Cloudflare, say — without raising it collapses every
+user into one bucket keyed by the Render ingress.
 
 `LoginAttemptService` locks an account for 15 minutes after 5 consecutive failures (→
 423) and writes every login outcome to the `com.markly.audit` logger. The rate-limit
