@@ -10,9 +10,10 @@ backlog or aspiration). A student account is created by an admin
 the `users` table. On success the server issues a JWT (`AuthController`)
 in an httpOnly cookie the browser attaches to every subsequent request; the response body
 (`web/dto/LoginResponse`) carries only the username, the role and a CSRF token. Five
-wrong passwords in a row lock the account for 15 minutes. There is no "forgot password"
-or self-service password change — only an admin can set a student's password (via account
-creation; there's no reset endpoint either, for any role).
+wrong passwords in a row lock the account for 15 minutes. A student can change their own password from the profile
+page (`POST /api/auth/password`, current password required), which ends their other
+sessions. There is still no "forgot password" flow — a student who cannot sign in at all
+needs an admin, and there is no reset endpoint for any role.
 
 ## Navigation
 

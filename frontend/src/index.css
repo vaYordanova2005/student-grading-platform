@@ -60,6 +60,19 @@ body {
   color: var(--text-muted, #6b7280);
 }
 
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 22rem;
+}
+
+.password-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
+}
+
 .user-actions {
   display: flex;
   gap: 0.5rem;

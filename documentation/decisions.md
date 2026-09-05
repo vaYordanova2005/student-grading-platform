@@ -64,7 +64,13 @@ deactivation) retires every outstanding token for that account at once.
 
 ## Brute-force protection and password rules
 
-`LoginRateLimitFilter` caps login attempts per client address (15 per 5 minutes → 429);
+`LoginRateLimitFilter` caps **failed** login attempts per client address (15 per 5
+minutes → 429). Successful logins are not counted, so a lab behind one NAT address
+cannot lock itself out by signing in normally. The address comes from the *last* entry of
+`X-Forwarded-For` (`ClientIp`) — proxies append rather than replace, so the leftmost
+entry is caller-controlled and using it would let an attacker mint a fresh bucket per
+request; this assumes exactly one trusted proxy in front of the app.
+
 `LoginAttemptService` locks an account for 15 minutes after 5 consecutive failures (→
 423) and writes every login outcome to the `com.markly.audit` logger. The rate-limit
 counters are in-memory, which is enough for the single instance this is deployed as — a
@@ -72,7 +78,15 @@ multi-instance deployment would need them shared (Redis) or enforced at the edge
 
 Passwords must be at least 10 characters with an upper-case letter, a lower-case letter
 and a digit, must not contain the username's local part, and must not be one of the
-common passwords listed in `UserValidationService`.
+common passwords listed in `UserValidationService`. The rule covers the seeded accounts
+too: `DataSeeder` refuses to start if `SEED_ADMIN_PASSWORD` fails it (note that with the
+default username `admin`, the password may not contain "admin"), and the demo constants
+are asserted against it in `SeedPasswordPolicyTest`.
+
+`POST /api/auth/password` lets any signed-in user rotate their own password: the current
+password is required, the new one goes through the same policy, and the token version is
+bumped so every other session ends while the calling tab gets a fresh cookie. This is
+also the only way to rotate the seeded admin password from inside the app.
 
 ## No self-service or admin account management beyond create
 

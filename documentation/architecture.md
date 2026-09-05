@@ -43,7 +43,10 @@ frontend (React + Vite, TS)  --HTTP/JSON + JWT-->  backend (Spring Boot)  -->  P
   user (so role and account state are never trusted from the claim), rejects a token
   whose `tv` claim no longer matches the user's `token_version`, and puts an
   `Authentication` in the `SecurityContext`.
-* Login is rate limited per client address (`LoginRateLimitFilter`) and per account —
+* `POST /api/auth/password` rotates the caller's own password (current password
+  required) and ends every other session for that account.
+* Login is rate limited per client address (`LoginRateLimitFilter`, failed attempts only)
+  and per account —
   five consecutive failures lock the account for 15 minutes (`LoginAttemptService`).
   Every login outcome is written to the `com.markly.audit` logger.
 * Role-based access is enforced in `SecurityConfig` (endpoint → role) and additionally in

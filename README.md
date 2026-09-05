@@ -41,6 +41,9 @@ SEED_ADMIN_PASSWORD=<password for the admin account> \
 
 `JWT_SECRET` and `SEED_ADMIN_PASSWORD` have no default value — the app won't start
 without them, so it can't accidentally end up deployed with publicly known credentials.
+`SEED_ADMIN_PASSWORD` must also satisfy the password policy (at least 10 characters with
+an upper-case letter, a lower-case letter and a digit, and not containing the admin's own
+username) or startup fails; it can be rotated afterwards from the profile page.
 On first startup Flyway creates the schema and seeds an admin account with username
 `admin` (configurable via `SEED_ADMIN_USERNAME`) and the password set in
 `SEED_ADMIN_PASSWORD`.

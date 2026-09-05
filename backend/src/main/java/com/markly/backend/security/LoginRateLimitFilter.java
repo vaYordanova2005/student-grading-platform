@@ -21,7 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Caps how many login attempts one client address may make per window, so a
+ * Caps how many <em>failed</em> login attempts one client address may make per
+ * window, so a
  * password-guessing run is stopped before the per-account lockout in
  * {@link LoginAttemptService} even comes into play (and, unlike that lockout,
  * this also covers an attacker spraying one password across many accounts).
@@ -60,7 +61,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String clientIp = ClientIp.of(request);
-        if (!register(clientIp)) {
+        if (isExhausted(clientIp)) {
             loginAttemptService.onBlocked("-", clientIp, "RATE_LIMIT");
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setHeader("Retry-After", String.valueOf(WINDOW.toSeconds()));
@@ -72,17 +73,31 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+
+        // Only failures count. A whole computer lab shares one NAT address,
+        // and charging their successful logins against the same quota would
+        // lock the room out during ordinary use; a guessing run, by
+        // definition, produces failures.
+        if (response.getStatus() != HttpStatus.OK.value()) {
+            countFailure(clientIp);
+        }
     }
 
-    /** @return {@code false} once the client has used up its quota for the current window. */
-    private boolean register(String clientIp) {
+    /** @return {@code true} once the client has used up its quota for the current window. */
+    private boolean isExhausted(String clientIp) {
+        Window window = attempts.get(clientIp);
+        return window != null && !window.hasExpired(Instant.now())
+                && window.count.get() >= MAX_ATTEMPTS_PER_WINDOW;
+    }
+
+    private void countFailure(String clientIp) {
         Instant now = Instant.now();
         if (attempts.size() > MAX_TRACKED_CLIENTS) {
-            attempts.values().removeIf(window -> window.startedAt.plus(WINDOW).isBefore(now));
+            attempts.values().removeIf(window -> window.hasExpired(now));
         }
-        Window window = attempts.compute(clientIp, (ip, existing) ->
-                existing == null || existing.startedAt.plus(WINDOW).isBefore(now) ? new Window(now) : existing);
-        return window.count.incrementAndGet() <= MAX_ATTEMPTS_PER_WINDOW;
+        attempts.compute(clientIp, (ip, existing) ->
+                        existing == null || existing.hasExpired(now) ? new Window(now) : existing)
+                .count.incrementAndGet();
     }
 
     private static final class Window {
@@ -91,6 +106,10 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
         private Window(Instant startedAt) {
             this.startedAt = startedAt;
+        }
+
+        private boolean hasExpired(Instant now) {
+            return startedAt.plus(WINDOW).isBefore(now);
         }
     }
 }

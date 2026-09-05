@@ -55,6 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authUser;
   };
 
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    const response = await apiClient.post('/auth/password', { currentPassword, newPassword });
+    // Every other session was just invalidated, including the token this tab
+    // was using — the response carries its replacement.
+    setCsrfToken(response.data.csrfToken);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       // Bumps the account's token version server-side, so the token that was
@@ -66,7 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSession();
   }, [clearSession]);
 
-  const value = useMemo(() => ({ user, initializing, login, logout }), [user, initializing, logout]);
+  const value = useMemo(
+    () => ({ user, initializing, login, logout, changePassword }),
+    [user, initializing, logout, changePassword]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

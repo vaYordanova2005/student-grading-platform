@@ -6,6 +6,8 @@ export interface AuthContextValue {
   /** True until the initial session probe against the backend has answered. */
   initializing: boolean;
   login: (username: string, password: string) => Promise<AuthUser>;
+  /** Rotates the password; the backend re-issues this session's cookie and CSRF token. */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 

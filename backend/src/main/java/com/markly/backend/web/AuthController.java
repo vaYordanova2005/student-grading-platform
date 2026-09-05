@@ -6,6 +6,8 @@ import com.markly.backend.security.AuthCookieService;
 import com.markly.backend.security.ClientIp;
 import com.markly.backend.security.JwtService;
 import com.markly.backend.security.LoginAttemptService;
+import com.markly.backend.service.UserValidationService;
+import com.markly.backend.web.dto.ChangePasswordRequest;
 import com.markly.backend.web.dto.LoginRequest;
 import com.markly.backend.web.dto.LoginResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +21,7 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,18 +39,24 @@ public class AuthController {
     private final AuthCookieService authCookieService;
     private final LoginAttemptService loginAttemptService;
     private final UserRepository userRepository;
+    private final UserValidationService userValidationService;
+    private final PasswordEncoder passwordEncoder;
 
     public AuthController(
             AuthenticationManager authenticationManager,
             JwtService jwtService,
             AuthCookieService authCookieService,
             LoginAttemptService loginAttemptService,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            UserValidationService userValidationService,
+            PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.authCookieService = authCookieService;
         this.loginAttemptService = loginAttemptService;
         this.userRepository = userRepository;
+        this.userValidationService = userValidationService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
@@ -94,6 +103,49 @@ public class AuthController {
                 .orElseThrow(() -> new BadCredentialsException("No session"));
         return new LoginResponse(
                 principal.getUsername(), principal.getUser().getRole().name(), csrfToken);
+    }
+
+    /**
+     * Until this existed the password policy only applied at account creation:
+     * nobody could rotate a password, including the seeded admin's, without an
+     * admin creating a whole new account.
+     *
+     * <p>The current password is required, so someone sitting at an unlocked
+     * browser cannot take the account over. Every other session is dropped
+     * (the token version moves), and this one is re-issued a fresh cookie so
+     * the user is not logged out of the tab they just used.
+     */
+    @PostMapping("/password")
+    public ResponseEntity<LoginResponse> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            @AuthenticationPrincipal AppUserPrincipal principal,
+            HttpServletRequest httpRequest) {
+        var user = userRepository.findByUsernameIgnoreCase(principal.getUsername())
+                .orElseThrow(() -> new BadCredentialsException("No such user"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            loginAttemptService.onBlocked(
+                    user.getUsername(), ClientIp.of(httpRequest), "PASSWORD_CHANGE_WRONG_CURRENT");
+            // Deliberately a 400 and not a 401: the SPA treats a 401 as "the
+            // session is gone" and logs out, which would be a surprising way
+            // to answer a typo in the current-password field.
+            throw new IllegalArgumentException("Текущата парола е грешна");
+        }
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Новата парола трябва да е различна от текущата");
+        }
+        userValidationService.validatePassword(user.getUsername(), request.newPassword());
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        userRepository.save(user);
+
+        String role = user.getRole().name();
+        String token = jwtService.issueToken(user.getUsername(), role, user.getTokenVersion());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, authCookieService.create(token).toString())
+                .body(new LoginResponse(user.getUsername(), role,
+                        jwtService.csrfTokenFor(jwtService.parseClaims(token))));
     }
 
     /**

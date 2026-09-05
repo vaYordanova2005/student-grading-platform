@@ -111,6 +111,82 @@ class AuthSecurityTest {
                 .andExpect(status().isTooManyRequests());
     }
 
+    /**
+     * The bucket has to key off the address the proxy appended, not the one
+     * the caller put in front of it — otherwise a fresh header value per
+     * request buys an attacker an unlimited number of attempts.
+     */
+    @Test
+    void cannotEscapeTheRateLimitByForgingAForwardedForHeader() throws Exception {
+        for (int i = 0; i < LoginRateLimitFilter.MAX_ATTEMPTS_PER_WINDOW; i++) {
+            mockMvc.perform(loginRequest("Grehsna-Parola9", "1.2.3." + i + ", 10.0.0.8"));
+        }
+
+        mockMvc.perform(loginRequest("Grehsna-Parola9", "9.9.9.9, 10.0.0.8"))
+                .andExpect(status().isTooManyRequests());
+    }
+
+    /**
+     * A shared NAT address must not be able to run itself out of the quota by
+     * signing in normally.
+     */
+    @Test
+    void successfulLoginsDoNotCountTowardsTheRateLimit() throws Exception {
+        for (int i = 0; i < LoginRateLimitFilter.MAX_ATTEMPTS_PER_WINDOW + 3; i++) {
+            mockMvc.perform(loginRequest(PASSWORD, "10.0.0.9"))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    void changingThePasswordInvalidatesTheOtherSessionsButNotThisOne() throws Exception {
+        MvcResult first = login("10.0.0.10");
+        Cookie otherSession = first.getResponse().getCookie(AuthCookieService.COOKIE_NAME);
+
+        MvcResult second = login("10.0.0.10");
+        Cookie currentSession = second.getResponse().getCookie(AuthCookieService.COOKIE_NAME);
+
+        MvcResult changed = mockMvc.perform(post("/api/auth/password")
+                        .cookie(currentSession)
+                        .header(AuthCookieService.CSRF_HEADER, csrfTokenOf(second))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"" + PASSWORD
+                                + "\",\"newPassword\":\"Nova-Parola7\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        mockMvc.perform(get("/api/auth/me").cookie(otherSession))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/auth/me")
+                        .cookie(changed.getResponse().getCookie(AuthCookieService.COOKIE_NAME)))
+                .andExpect(status().isOk());
+        mockMvc.perform(loginRequest("Nova-Parola7", "10.0.0.10"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void refusesAWeakNewPasswordAndAWrongCurrentOne() throws Exception {
+        MvcResult session = login("10.0.0.11");
+        Cookie cookie = session.getResponse().getCookie(AuthCookieService.COOKIE_NAME);
+        String csrfToken = csrfTokenOf(session);
+
+        mockMvc.perform(post("/api/auth/password")
+                        .cookie(cookie)
+                        .header(AuthCookieService.CSRF_HEADER, csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"" + PASSWORD + "\",\"newPassword\":\"kratka1\"}"))
+                .andExpect(status().isBadRequest());
+
+        // A typo in the current password must not read as an expired session,
+        // or the SPA would log the user out over it.
+        mockMvc.perform(post("/api/auth/password")
+                        .cookie(cookie)
+                        .header(AuthCookieService.CSRF_HEADER, csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"Grehsna-Parola9\",\"newPassword\":\"Nova-Parola7\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
     @Test
     void refusesADeactivatedAccount() throws Exception {
         student.setEnabled(false);

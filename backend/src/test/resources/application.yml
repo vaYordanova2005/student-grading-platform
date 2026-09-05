@@ -26,7 +26,7 @@ app:
       same-site: Lax
   seed-admin:
     username: admin
-    password: Admin-Seed-2024
+    password: Seed-Parola2024
   seed-demo-data:
     enabled: false
 
